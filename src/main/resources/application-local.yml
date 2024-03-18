@@ -76,6 +76,8 @@ feign:
 logging:
   level:
     org.highmed.numportal: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 ehrbase:
   rest-api-url: http://localhost:8070/ehrbase/

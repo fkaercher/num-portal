@@ -13,6 +13,7 @@ import org.ehrbase.openehr.sdk.client.openehrclient.defaultrestclient.DefaultRes
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -23,6 +24,15 @@ public class EhrBaseConfig {
 
   private final EhrBaseProperties ehrBaseProperties;
 
+  @Bean
+  public CommonsRequestLoggingFilter requestLoggingFilter() {
+    CommonsRequestLoggingFilter loggingFilter = new CommonsRequestLoggingFilter();
+    loggingFilter.setIncludeClientInfo(true);
+    loggingFilter.setIncludeQueryString(true);
+    loggingFilter.setIncludePayload(true);
+    loggingFilter.setMaxPayloadLength(64000);
+    return loggingFilter;
+  }
   @Bean
   @Primary
   public DefaultRestClient createRestClient() throws URISyntaxException {
