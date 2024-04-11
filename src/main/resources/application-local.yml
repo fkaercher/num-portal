@@ -7,12 +7,12 @@ spring:
       data-source-properties:
         stringtype: unspecified
     numportal:
-      url: jdbc:postgresql://localhost:5432/numportal?currentSchema=num
+      url: jdbc:postgresql://localhost:5472/numportal?currentSchema=num
       driver-class-name: org.postgresql.Driver
-      username: postgres
-      password: postgres
+      username: num
+      password: num
     numportal-attachment:
-      url: jdbc:postgresql://localhost:5432/num-attachment?currentSchema=num
+      url: jdbc:postgresql://localhost:5472/num-attachment?currentSchema=num
       driver-class-name: org.postgresql.Driver
       username: num-attachment
       password: num-attachment
@@ -31,7 +31,7 @@ spring:
           userStoreClient:
             authorization-grant-type: client_credentials
             client-id: num-portal
-            client-secret: ZO29JPc5OLIZ29Rv83tEHOdxiAt2P9eC
+            client-secret: czPCJDlycHGiJkrCTGUgyRV2cDs3cgxk
         provider:
           userStoreClient:
             token-uri: ${keycloak.url}/realms/crr/protocol/openid-connect/token
@@ -63,7 +63,7 @@ userstore:
   url: ${keycloak.url}/admin/realms/crr
 
 keycloak:
-  url: http://localhost:8180
+  url: http://localhost:8100
 
 feign:
   client:
@@ -78,7 +78,7 @@ logging:
     org.highmed.numportal: DEBUG
 
 ehrbase:
-  rest-api-url: http://localhost:8080/ehrbase/
+  rest-api-url: http://localhost:8070/ehrbase/
   username: ehrbase-user
   password: SuperSecretPassword
 
