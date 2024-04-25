@@ -1,0 +1,33 @@
+services:
+  num-portal-webapp:
+    extends:
+      file: compose-common.yaml
+      service: num-portal-webapp
+
+  num-portal:
+    extends:
+      file: compose-common.yaml
+      service: num-portal
+    env_file:
+      - .env
+    environment:
+      EHRBASE_ADDRESS: ${EHRBASE_ADDRESS}
+      EHRBASE_USER: ${EHRBASE_USER}
+      EHRBASE_PASS: ${EHRBASE_PASS}
+
+  num-db:
+    extends:
+      file: compose-common.yaml
+      service: num-db
+
+  num-keycloak:
+    extends:
+      file: compose-common.yaml
+      service: num-keycloak
+
+volumes:
+  num-db-data:
+
+networks:
+  num-net:
+  ehrbase-net:
