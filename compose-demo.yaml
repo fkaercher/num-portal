@@ -1,0 +1,49 @@
+# setup quick demo of num portal — do not use for publicly accessible deployment!
+
+# To access the NUM portal:
+#  - login in with user superadmin, password super
+#  - in the user_details table in the numportal database set approved = true
+#  - reload the NUM portal in your browser
+
+# For further information how to use the portal, see the user manual: https://num-portal-webapp.readthedocs.io/de/latest/
+
+services:
+  num-portal-webapp:
+    extends:
+      file: compose-common.yaml
+      service: num-portal-webapp
+
+  num-portal:
+    extends:
+      file: compose-common.yaml
+      service: num-portal
+    depends_on:
+      - ehrbase
+
+  num-db:
+    extends:
+      file: compose-common.yaml
+      service: num-db
+
+  num-keycloak:
+    extends:
+      file: compose-common.yaml
+      service: num-keycloak
+
+  ehrbase:
+    extends:
+      file: compose-common.yaml
+      service: ehrbase
+
+  ehrbase-db:
+    extends:
+      file: compose-common.yaml
+      service: ehrbase-db
+
+volumes:
+  num-db-data:
+  ehrbase-db-data:
+
+networks:
+  num-net:
+  ehrbase-net:
