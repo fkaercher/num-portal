@@ -9,8 +9,8 @@ spring:
     numportal:
       url: jdbc:postgresql://localhost:5432/numportal?currentSchema=num
       driver-class-name: org.postgresql.Driver
-      username: postgres
-      password: postgres
+      username: num
+      password: num
     numportal-attachment:
       url: jdbc:postgresql://localhost:5432/num-attachment?currentSchema=num
       driver-class-name: org.postgresql.Driver
