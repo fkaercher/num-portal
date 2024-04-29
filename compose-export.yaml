@@ -1,0 +1,15 @@
+services:
+  num-keycloak-exp:
+    container_name: num-keycloak-exp
+    image: #add image id here
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "127.0.0.1:8100:8080"
+
+    user: root
+    #command: "export --dir /opt/keycloak/data/export --users same_file --realm crr"
+    command: "export --file /opt/keycloak/data/export/crr-with-user.json --users realm_file --realm crr"
+    volumes:
+      - ./exports:/opt/keycloak/data/export
