@@ -78,7 +78,7 @@ services:
 
   ehrbase:
     container_name: ehrbase
-    image: ehrbase/ehrbase:2.0.0
+    image: ehrbase/ehrbase:0.32.0
     environment:
       DB_URL: jdbc:postgresql://ehrbase-db:5432/ehrbase
       DB_USER: ehrbase_restricted
@@ -86,7 +86,7 @@ services:
       DB_USER_ADMIN: ehrbase
       DB_PASS_ADMIN: ehrbase
       SERVER_NODENAME: local.ehrbase.org
-      SPRING_PROFILES_ACTIVE: local
+    restart: on-failure
     ports:
       - "127.0.0.1:8070:8080"
     networks:
@@ -97,10 +97,12 @@ services:
   ehrbase-db:
     container_name:
       ehrbase-db
-    image: ehrbase/ehrbase-v2-postgres:16.2
+    image: ehrbase/ehrbase-postgres:13.4.v2
+    volumes:
+      - ehrbase-db-data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: postgres
-      PASSWORD: postgres
+      POSTGRES_PASSWORD: postgres
       EHRBASE_USER: ehrbase_restricted
       EHRBASE_PASSWORD: ehrbase_restricted
       EHRBASE_USER_ADMIN: ehrbase
