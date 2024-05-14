@@ -4,11 +4,11 @@
 
 There are two options to run the portal using Docker:
   1. Running a demo including all componentes including an empty EHRbase
-    - Run: `docker-compose -f compose-demo.yaml up`
+     - Run: `docker-compose -f compose-demo.yaml up`
 
-  2. Running the portal with an existing EHRbase
-    - Adappt the `.env.sample` file and save it as `.env` 
-    - Run: `docker-compose -f compose-demo-without-ehrbase.yaml up`
+  3. Running the portal with an existing EHRbase
+     - Adappt the `.env.sample` file and save it as `.env`
+     - Run: `docker-compose -f compose-demo-without-ehrbase.yaml up`
       
   - Go to http://localhost:4200 and login with user superadmin, password super
   - Go to user_details table in the numportal database and set superadmin user approved = true
