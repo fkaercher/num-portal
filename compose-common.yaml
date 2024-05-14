@@ -2,8 +2,7 @@ services:
   num-portal-webapp:
     container_name: num-portal-webapp
     build:
-      # assume that num-portal-webapp code is checked out there
-      context: ../num-portal-webapp
+      context: https://github.com/fkaercher/num-portal-webapp.git#develop
       args:
         - env_name=dev
         - api_baseUrl=http://localhost:8090
