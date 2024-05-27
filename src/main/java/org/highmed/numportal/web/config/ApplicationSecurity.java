@@ -1,5 +1,10 @@
 package org.highmed.numportal.web.config;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,6 +16,10 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
+import org.springframework.web.filter.GenericFilterBean;
+
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -19,6 +28,15 @@ public class ApplicationSecurity {
 
   private static final String[] AUTH_WHITELIST = {"/swagger-*/**", "/v2/**", "/v3/**", "/admin/health",
           "/admin/log-level", "/admin/log-level/*", "/admin/manuel-url", "/admin/services-status"};
+
+    public class CustomSecurityFilter extends GenericFilterBean {
+        @Override
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+            HttpServletRequest request = (HttpServletRequest) servletRequest;
+            logger.debug("LOG: request: " + request.getMethod() + " " + request.getRequestURI() + " client ip address:" + request.getRemoteAddr());
+            filterChain.doFilter(servletRequest, servletResponse);
+        }
+    }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -31,6 +49,7 @@ public class ApplicationSecurity {
                     jwt.jwtAuthenticationConverter(new AuthorizationConverter())))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(Customizer.withDefaults());
+    httpSecurity.addFilterBefore(new CustomSecurityFilter(), SecurityContextPersistenceFilter.class);
     return httpSecurity.build();
   }
     @Bean
