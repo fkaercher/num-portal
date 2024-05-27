@@ -1,7 +1,15 @@
 FROM sapmachine:21-jdk-headless-ubuntu AS build
 
-COPY . /opt/num-portal
-WORKDIR /opt/num-portal
+ENV HOME=/opt/num-portal
+WORKDIR $HOME
+RUN mkdir -p $HOME
+
+ADD mvnw $HOME
+ADD .mvn/wrapper $HOME/.mvn/wrapper
+ADD pom.xml $HOME
+RUN /opt/num-portal/mvnw verify --fail-never
+
+COPY . $HOME
 RUN /opt/num-portal/mvnw clean package -Dmaven.test.skip=true
 
 
