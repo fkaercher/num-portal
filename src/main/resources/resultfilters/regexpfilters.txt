@@ -6,4 +6,11 @@
 .*territory\|code$
 .*category\|code$
 .*encoding\|code$
-
+.*originating_system_item_id.*
+.*originating_system_audit.*
+.*context/setting.*
+.*context/status.*
+.*composer/_identifier.*
+.*context/kategorie.*
+.*context/start_time.*
+.*category\|value.*
