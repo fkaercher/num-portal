@@ -83,6 +83,7 @@ ehrbase:
   rest-api-url: http://localhost:8070/ehrbase/
   username: ehrbase-user
   password: SuperSecretPassword
+  id-path: "ehr_id/value"
 
 privacy:
   enabled: false
