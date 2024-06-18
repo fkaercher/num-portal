@@ -203,12 +203,7 @@ public class ParameterService {
 
     from.setContains(contains);
 
-    var orderByExpressionDto = new OrderByExpression();
-    orderByExpressionDto.setStatement(path);
-    orderByExpressionDto.setSymbol(OrderByExpression.OrderByDirection.ASC);
-
     List<OrderByExpression> orderByList = new LinkedList<>();
-    orderByList.add(orderByExpressionDto);
     aql.setSelect(selectClause);
     aql.setFrom(from);
     aql.setOrderBy(orderByList);
