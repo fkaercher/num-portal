@@ -219,7 +219,6 @@ public class CustomizedExceptionHandler extends ResponseEntityExceptionHandler {
                 .message( exception.getMessage() )
                 .details( errors )
                 .build();
-        log.debug(exception.getMessage(), exception);
         return ResponseEntity.status( HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS ).body( errorDetails );
     }
 
