@@ -87,7 +87,7 @@ ehrbase:
 
 privacy:
   enabled: false
-  minHits: 1
+  minHits: 0
   pseudonymitySecret: AVmnrinfsVDRigh4QGrsDFbs43a
   pseudonomityChunksSize: 20
 
