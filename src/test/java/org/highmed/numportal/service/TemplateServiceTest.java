@@ -1,7 +1,7 @@
 package org.highmed.numportal.service;
 
-import org.ehrbase.aqleditor.dto.containment.ContainmentDto;
-import org.ehrbase.aqleditor.service.AqlEditorContainmentService;
+import org.highmed.aqleditor.dto.containment.ContainmentDto;
+import org.highmed.aqleditor.service.AqlEditorContainmentService;
 import org.ehrbase.openehr.sdk.response.dto.ehrscape.TemplateMetaDataDto;
 import org.highmed.numportal.service.TemplateService;
 import org.highmed.numportal.service.UserDetailsService;

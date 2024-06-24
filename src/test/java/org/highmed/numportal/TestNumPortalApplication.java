@@ -12,10 +12,12 @@ import org.highmed.numportal.service.atna.AtnaProperties;
 @SpringBootApplication
 @EnableConfigurationProperties({AtnaProperties.class})
 @EnableAsync
-@ComponentScan(excludeFilters = @ComponentScan.Filter(
-        type = FilterType.ASSIGNABLE_TYPE,
-        value = { UserCacheInit.class,
-                NumPortalApplication.class
+@ComponentScan(
+        basePackages = {"org.highmed.numportal", "org.highmed.aqleditor"},
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                value = { UserCacheInit.class,
+                        NumPortalApplication.class
                 }))
 public class TestNumPortalApplication {
 

@@ -20,8 +20,6 @@
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-io.version>2.16.1</commons-io.version>
     <ehr-sdk.version>2.16.0</ehr-sdk.version>
-    <!-- aql-editor-backend-starter repo was archived on August 2023 -->
-    <num-aql-editor-backend-starter.version>1.0.5</num-aql-editor-backend-starter.version>
     <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
     <logback-classic.version>1.5.6</logback-classic.version>
     <modelmapper.version>3.2.1</modelmapper.version>
@@ -169,11 +167,6 @@
       <version>${ehr-sdk.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.NUM-Forschungsdatenplattform</groupId>
-      <artifactId>num-aql-editor-backend-spring-boot-starter</artifactId>
-      <version>${num-aql-editor-backend-starter.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.modelmapper</groupId>
       <artifactId>modelmapper</artifactId>
       <version>${modelmapper.version}</version>
@@ -260,6 +253,11 @@
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ehrbase.openehr.sdk</groupId>
+      <artifactId>generator</artifactId>
+      <version>${ehr-sdk.version}</version>
     </dependency>
   </dependencies>
 

@@ -54,7 +54,7 @@ public class SwaggerConfig {
 
   @Bean
   public GroupedOpenApi aqlEditorApi() {
-    return getDocket("Aql editor", "/aqleditor/**", "org.ehrbase.aqleditor.controler");
+    return getDocket("Aql editor", "/aqleditor/**", "org.highmed.aqleditor.controller");
   }
 
   @Bean

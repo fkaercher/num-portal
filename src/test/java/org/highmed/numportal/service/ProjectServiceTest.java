@@ -2,7 +2,7 @@ package org.highmed.numportal.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ehrbase.aqleditor.service.AqlEditorAqlService;
+import org.highmed.aqleditor.service.AqlEditorAqlService;
 import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
 import org.ehrbase.openehr.sdk.aql.dto.condition.LogicalOperatorCondition;
 import org.ehrbase.openehr.sdk.aql.dto.condition.MatchesCondition;
