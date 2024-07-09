@@ -18,7 +18,7 @@ services:
       file: compose-common.yaml
       service: num-portal
     depends_on:
-      - ehrbase
+      - ehrbase2
 
   num-db:
     extends:
@@ -30,19 +30,19 @@ services:
       file: compose-common.yaml
       service: num-keycloak
 
-  ehrbase:
+  ehrbase2:
     extends:
       file: compose-common.yaml
-      service: ehrbase
+      service: ehrbase2
 
-  ehrbase-db:
+  ehrbase2-db:
     extends:
       file: compose-common.yaml
-      service: ehrbase-db
+      service: ehrbase2-db
 
 volumes:
   num-db-data:
-  ehrbase-db-data:
+  ehrbase2-db-data:
 
 networks:
   num-net:
