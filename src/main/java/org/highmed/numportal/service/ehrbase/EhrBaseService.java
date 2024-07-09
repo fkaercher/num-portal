@@ -42,7 +42,7 @@ import static org.highmed.numportal.domain.templates.ExceptionsTemplate.*;
 public class EhrBaseService {
 
   private static final Aql ALL_PATIENTS_IDS =
-          Aql.builder().query("select e/ehr_id/value from ehr e").build();
+          Aql.builder().query("SELECT e/ehr_id/value FROM EHR e").build();
 
   private static final String COMPOSITION_KEY = "_type";
   private static final String NAME = "name";
@@ -157,6 +157,10 @@ public class EhrBaseService {
     }
   }
 
+  public List<QueryResponseData> executePlainQuery2(String queryString) {
+    return flattenIfCompositionPresent(executePlainQuery(queryString), null);
+  }
+
   private void addSelectSecondlevelPseudonyms(AqlQuery aqlDto) {
     SelectExpression selectExpression = new SelectExpression();
     IdentifiedPath ehrIdPath = new IdentifiedPath();
@@ -263,7 +267,7 @@ public class EhrBaseService {
     }
     String ehrStatusPath = columns.get(0).get(PATH);
     if (ehrStatusPath == null || !ehrStatusPath.equals("/" + ehrBaseProperties.getIdPath())) {
-      throw new SystemException(EhrBaseService.class, QUERY_RESULT_DOESN_T_CONTAIN_EHR_STATUS_COLUMN);
+      //throw new SystemException(EhrBaseService.class, QUERY_RESULT_DOESN_T_CONTAIN_EHR_STATUS_COLUMN);
     }
     columns.remove(0);
     return compositions.getRows().stream()
