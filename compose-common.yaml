@@ -113,7 +113,7 @@ services:
 
   ehrbase2:
     container_name: ehrbase2
-    image: ehrbase/ehrbase:2.4.0
+    image: ehrbase/ehrbase:2.6.0
     environment:
       DB_URL: jdbc:postgresql://ehrbase2-db:5432/ehrbase
       DB_USER: ehrbase_restricted
