@@ -1,0 +1,6 @@
+{
+  "themes": [{
+    "name" : "ce",
+    "types": [ "account", "email", "login", "welcome" ]
+  }]
+}
