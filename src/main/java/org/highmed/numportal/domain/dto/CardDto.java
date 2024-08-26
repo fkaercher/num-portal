@@ -44,7 +44,6 @@ public class CardDto {
 
 
   @Schema(description = "The id of image of the card", example = "image-4")
-  @NotBlank
   private String imageId;
 
   @Schema(description = "The URL of the card", example = "https://www.highmed.org/")
