@@ -18,10 +18,7 @@ import org.ehrbase.openehr.sdk.webtemplate.model.WebTemplate;
 import org.ehrbase.openehr.sdk.webtemplate.model.WebTemplateNode;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -68,7 +65,19 @@ public class AqlEditorContainmentService {
       }
 
     } else {
-      RMTypeInfo typeInfo = ARCHIE_RM_INFO_LOOKUP.getTypeInfo(childNode.getRmType());
+      System.out.println("------------------------------------");
+      System.out.println(childNode.getRmType());
+      System.out.println(childNode.getAqlPath());
+      System.out.println(childNode.getNodeId());
+      System.out.println(childNode.getName());
+      var rmType = childNode.getRmType();
+      if(Objects.equals(rmType, "STRING")) { // "fix" for IPS template
+        rmType = "DV_TEXT";
+        System.out.println("NULL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      }
+
+
+      RMTypeInfo typeInfo = ARCHIE_RM_INFO_LOOKUP.getTypeInfo(rmType);
       RmClassGeneratorConfig rmClassGeneratorConfig = configMap.get(typeInfo.getJavaClass());
       if (rmClassGeneratorConfig == null || !rmClassGeneratorConfig.isExpandField()) {
         FieldDto fieldDto = new FieldDto();

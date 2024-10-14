@@ -14,12 +14,16 @@ public abstract class BaseController {
   @ExceptionHandler(AqlParseException.class)
   public ResponseEntity<Map<String, String>> aqlParseErrorHandler(RuntimeException e) {
     log.error(e.getMessage(), e);
+    System.out.println(e.getMessage());
+    e.printStackTrace();
     return createErrorResponse(e.getMessage(), HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler(RuntimeException.class)
   public ResponseEntity<Map<String, String>> restErrorHandler(RuntimeException e) {
     log.error(e.getMessage(), e);
+    System.out.println(e.getMessage());
+    e.printStackTrace();
     return createErrorResponse(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
