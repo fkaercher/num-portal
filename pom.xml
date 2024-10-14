@@ -19,7 +19,7 @@
   <properties>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-io.version>2.16.1</commons-io.version>
-    <ehr-sdk.version>2.16.0</ehr-sdk.version>
+    <ehr-sdk.version>2.18.0</ehr-sdk.version>
     <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
     <logback-classic.version>1.5.6</logback-classic.version>
     <modelmapper.version>3.2.1</modelmapper.version>
