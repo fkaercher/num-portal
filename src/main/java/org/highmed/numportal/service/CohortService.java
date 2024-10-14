@@ -126,8 +126,7 @@ public class CohortService {
 
   public long getCohortGroupSize(CohortGroupDto cohortGroupDto, String userId, Boolean allowUsageOutsideEu) {
     userDetailsService.checkIsUserApproved(userId);
-    Set<String> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
-    return ehrIds.size();
+      return getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu).values().stream().mapToInt(Set::size).sum();
   }
 
   public int getRoundedSize(long size) {
@@ -296,26 +295,25 @@ public class CohortService {
 
   public CohortSizeDto getCohortGroupSizeWithDistribution(CohortGroupDto cohortGroupDto, String userId, Boolean allowUsageOutsideEu) {
     userDetailsService.checkIsUserApproved(userId);
-    Set<String> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
+    Map<String, Set<String>> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
     int count = ehrIds.size();
     if (count == 0) {
       return CohortSizeDto.builder().build();
     }
 
-    String idsString = "'" + String.join("','", ehrIds) + "'";
+    Map<String, Integer> hospitals = new HashMap<>();
+    ehrIds.forEach((location, ids) -> hospitals.put(location, ids.size()));
 
-    var hospitals = getSizesPerHospital(userId, idsString);
-
-    var ageGroups = getSizesPerAgeGroup(idsString);
+    Map<String, Integer> ageGroups = Map.of();
 
     return CohortSizeDto.builder().hospitals(hospitals).ages(ageGroups).count(count).build();
   }
 
-  private Set<String> getCohortGroupEhrIds(CohortGroupDto cohortGroupDto, Boolean allowUsageOutsideEu) {
+  private Map<String, Set<String>> getCohortGroupEhrIds(CohortGroupDto cohortGroupDto, Boolean allowUsageOutsideEu) {
     CohortGroup cohortGroup = convertToCohortGroupEntity(cohortGroupDto);
     validateCohortParameters(cohortGroupDto);
-    Set<String> ehrIds = cohortExecutor.executeGroup(cohortGroup, allowUsageOutsideEu);
-    if (ehrIds.size() < privacyProperties.getMinHits()) {
+    Map<String, Set<String>> ehrIds = cohortExecutor.executeGroup2(cohortGroup, allowUsageOutsideEu);
+    if (ehrIds.values().stream().mapToInt(Set::size).anyMatch(e -> e < privacyProperties.getMinHits())) {
       log.warn(RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
       throw new PrivacyException(CohortService.class, RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
     }

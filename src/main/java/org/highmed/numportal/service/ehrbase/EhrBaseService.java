@@ -77,6 +77,10 @@ public class EhrBaseService {
     return retrieveEligiblePatientIds(aql.getQuery());
   }
 
+  public Map<String, Set<String>> retrieveEligiblePatientIds2(Aql aql) {
+    return retrieveEligiblePatientIds2(aql.getQuery());
+  }
+
   public Set<String> retrieveEligiblePatientIds(String query) {
     log.debug("EhrBase retrieve ehr ids for query: {} ", query);
     AqlQuery dto = AqlQueryParser.parse(query);
@@ -97,6 +101,40 @@ public class EhrBaseService {
     try {
       List<Record1<UUID>> results = restClient.aqlEndpoint().execute(Query.buildNativeQuery(AqlRenderer.render(dto), UUID.class));
       return results.stream().map(result -> result.value1().getValue()).collect(Collectors.toSet());
+    } catch (WrongStatusCodeException e) {
+      log.error(INVALID_AQL_QUERY, e.getMessage(), e);
+      throw new WrongStatusCodeException("EhrBaseService.class", 93, 1);
+    } catch (ClientException e) {
+      log.error(ERROR_MESSAGE, e.getMessage(), e);
+      throw new SystemException(EhrBaseService.class, AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL,
+              String.format(AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL, e.getMessage()));
+    }
+  }
+
+  public Map<String, Set<String>> retrieveEligiblePatientIds2(String query) {
+    log.debug("EhrBase retrieve ehr ids for query: {} ", query);
+    AqlQuery dto = AqlQueryParser.parse(query);
+    SelectExpression selectExpression = new SelectExpression();
+    IdentifiedPath ehrIdPath = new IdentifiedPath();
+    ehrIdPath.setPath(AqlObjectPath.parse(AqlQueryConstants.EHR_ID_PATH));
+
+    ContainmentClassExpression containmentClassExpression = new ContainmentClassExpression();
+    containmentClassExpression.setType(AqlQueryConstants.EHR_TYPE);
+    containmentClassExpression.setIdentifier(AqlQueryConstants.EHR_CONTAINMENT_IDENTIFIER);
+    ehrIdPath.setRoot(containmentClassExpression);
+
+    selectExpression.setColumnExpression(ehrIdPath);
+
+    dto.getSelect().setStatement(List.of(selectExpression));
+    log.info("Generated query for retrieveEligiblePatientIds {} ", AqlRenderer.render(dto));
+
+    try {
+      List<Record2<String, List>> results = aftRestClient.aqlEndpoint().execute(Query.buildNativeQuery(AqlRenderer.render(dto), String.class, List.class));
+      var result = new HashMap<String, Set<String>>();
+      for (Record2<String, List> record : results) {
+        result.put(record.value1(), new HashSet<String>(record.value2()));
+      }
+      return result;
     } catch (WrongStatusCodeException e) {
       log.error(INVALID_AQL_QUERY, e.getMessage(), e);
       throw new WrongStatusCodeException("EhrBaseService.class", 93, 1);
@@ -176,6 +214,10 @@ public class EhrBaseService {
 
   public Set<String> getAllPatientIds() {
     return retrieveEligiblePatientIds(ALL_PATIENTS_IDS);
+  }
+
+  public Map<String, Set<String>> getAllPatientIds2() {
+    return retrieveEligiblePatientIds2(ALL_PATIENTS_IDS);
   }
 
   public List<TemplateMetaDataDto> getAllTemplatesMetadata() {

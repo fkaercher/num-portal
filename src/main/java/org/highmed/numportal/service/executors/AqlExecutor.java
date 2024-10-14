@@ -32,7 +32,7 @@ public class AqlExecutor {
   private final ConsentProperties consentProperties;
 
   public Set<String> execute(
-      CohortAql aql, Map<String, Object> parameters, Boolean allowUsageOutsideEu) {
+    CohortAql aql, Map<String, Object> parameters, Boolean allowUsageOutsideEu) {
 
     if (aql != null && StringUtils.isNotEmpty(aql.getQuery())) {
       if (BooleanUtils.isTrue(allowUsageOutsideEu) || allowUsageOutsideEu == null) {
@@ -45,6 +45,23 @@ public class AqlExecutor {
       return ehrBaseService.retrieveEligiblePatientIds(query);
     } else {
       return SetUtils.emptySet();
+    }
+  }
+
+  public Map<String, Set<String>> execute2(
+    CohortAql aql, Map<String, Object> parameters, Boolean allowUsageOutsideEu) {
+
+    if (aql != null && StringUtils.isNotEmpty(aql.getQuery())) {
+      if (BooleanUtils.isTrue(allowUsageOutsideEu) || allowUsageOutsideEu == null) {
+        applyPolicy(aql);
+      }
+
+      String query = removeNullParameters(parameters, aql.getQuery());
+      query = addParameters(parameters, query);
+
+      return ehrBaseService.retrieveEligiblePatientIds2(query);
+    } else {
+      return Map.of();
     }
   }
 
