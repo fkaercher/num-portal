@@ -9,6 +9,7 @@ import org.highmed.numportal.domain.dto.QueryDto;
 import org.highmed.numportal.service.ehrbase.EhrBaseService;
 import org.highmed.numportal.service.logger.AuditLog;
 import org.highmed.numportal.web.config.Role;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 @RequestMapping(value = "/query", produces = "application/json")
 @SecurityRequirement(name = "security_auth")
+@ConditionalOnProperty(value = "feature.search-with-aql", havingValue = "true")
 public class QueryController {
 
     private final EhrBaseService ehrBaseService;
@@ -31,7 +33,7 @@ public class QueryController {
     public ResponseEntity<QueryResponseData> executeManagerProject(
             @RequestBody @Valid QueryDto queryDto) {
         return ResponseEntity.ok(
-                ehrBaseService.executePlainQuery(queryDto.getAql()
-                ));
+                ehrBaseService.executePlainQuery(queryDto.getAql())
+        );
     }
 }
