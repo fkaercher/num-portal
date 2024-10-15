@@ -77,8 +77,8 @@ public class EhrBaseService {
     return retrieveEligiblePatientIds(aql.getQuery());
   }
 
-  public Map<String, Set<String>> retrieveEligiblePatientIds2(Aql aql) {
-    return retrieveEligiblePatientIds2(aql.getQuery());
+  public Map<String, Set<String>> retrieveEligiblePatientIdsAft(Aql aql) {
+    return retrieveEligiblePatientIdsAft(aql.getQuery());
   }
 
   public Set<String> retrieveEligiblePatientIds(String query) {
@@ -111,7 +111,7 @@ public class EhrBaseService {
     }
   }
 
-  public Map<String, Set<String>> retrieveEligiblePatientIds2(String query) {
+  public Map<String, Set<String>> retrieveEligiblePatientIdsAft(String query) {
     log.debug("EhrBase retrieve ehr ids for query: {} ", query);
     AqlQuery dto = AqlQueryParser.parse(query);
     SelectExpression selectExpression = new SelectExpression();
@@ -217,7 +217,7 @@ public class EhrBaseService {
   }
 
   public Map<String, Set<String>> getAllPatientIds2() {
-    return retrieveEligiblePatientIds2(ALL_PATIENTS_IDS);
+    return retrieveEligiblePatientIdsAft(ALL_PATIENTS_IDS);
   }
 
   public List<TemplateMetaDataDto> getAllTemplatesMetadata() {

@@ -48,7 +48,7 @@ public class AqlExecutor {
     }
   }
 
-  public Map<String, Set<String>> execute2(
+  public Map<String, Set<String>> executeAft(
     CohortAql aql, Map<String, Object> parameters, Boolean allowUsageOutsideEu) {
 
     if (aql != null && StringUtils.isNotEmpty(aql.getQuery())) {
@@ -59,7 +59,7 @@ public class AqlExecutor {
       String query = removeNullParameters(parameters, aql.getQuery());
       query = addParameters(parameters, query);
 
-      return ehrBaseService.retrieveEligiblePatientIds2(query);
+      return ehrBaseService.retrieveEligiblePatientIdsAft(query);
     } else {
       return Map.of();
     }

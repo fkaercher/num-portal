@@ -10,6 +10,7 @@ import org.highmed.numportal.domain.model.Project;
 import org.highmed.numportal.domain.model.ProjectStatus;
 import org.highmed.numportal.domain.repository.CohortRepository;
 import org.highmed.numportal.domain.repository.ProjectRepository;
+import org.highmed.numportal.properties.FeatureProperties;
 import org.highmed.numportal.properties.PrivacyProperties;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,7 @@ public class CohortService {
   private final EhrBaseService ehrBaseService;
   private final ContentService contentService;
   private final TemplateService templateService;
+  private final FeatureProperties featureProperties;
 
   public static final String GET_PATIENTS_PER_CLINIC =
       "SELECT e/ehr_id/value as patient_id "
@@ -126,7 +128,12 @@ public class CohortService {
 
   public long getCohortGroupSize(CohortGroupDto cohortGroupDto, String userId, Boolean allowUsageOutsideEu) {
     userDetailsService.checkIsUserApproved(userId);
-      return getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu).values().stream().mapToInt(Set::size).sum();
+    if (featureProperties.isAft()) {
+      return getCohortGroupEhrIdsAft(cohortGroupDto, allowUsageOutsideEu).values().stream().mapToInt(Set::size).sum();
+    } else {
+      Set<String> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
+      return ehrIds.size();
+    }
   }
 
   public int getRoundedSize(long size) {
@@ -295,25 +302,52 @@ public class CohortService {
 
   public CohortSizeDto getCohortGroupSizeWithDistribution(CohortGroupDto cohortGroupDto, String userId, Boolean allowUsageOutsideEu) {
     userDetailsService.checkIsUserApproved(userId);
-    Map<String, Set<String>> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
-    int count = ehrIds.size();
-    if (count == 0) {
-      return CohortSizeDto.builder().build();
+    if (featureProperties.isAft()) {
+      Map<String, Set<String>> ehrIds = getCohortGroupEhrIdsAft(cohortGroupDto, allowUsageOutsideEu);
+      int count = ehrIds.size();
+      if (count == 0) {
+        return CohortSizeDto.builder().build();
+      }
+
+      Map<String, Integer> hospitals = new HashMap<>();
+      ehrIds.forEach((location, ids) -> hospitals.put(location, ids.size()));
+
+      Map<String, Integer> ageGroups = Map.of();
+
+      return CohortSizeDto.builder().hospitals(hospitals).ages(ageGroups).count(count).build();
+    } else {
+      Set<String> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
+      int count = ehrIds.size();
+      if (count == 0) {
+        return CohortSizeDto.builder().build();
+      }
+
+      String idsString = "'" + String.join("','", ehrIds) + "'";
+
+      var hospitals = getSizesPerHospital(userId, idsString);
+
+      var ageGroups = getSizesPerAgeGroup(idsString);
+
+      return CohortSizeDto.builder().hospitals(hospitals).ages(ageGroups).count(count).build();
     }
-
-    Map<String, Integer> hospitals = new HashMap<>();
-    ehrIds.forEach((location, ids) -> hospitals.put(location, ids.size()));
-
-    Map<String, Integer> ageGroups = Map.of();
-
-    return CohortSizeDto.builder().hospitals(hospitals).ages(ageGroups).count(count).build();
   }
 
-  private Map<String, Set<String>> getCohortGroupEhrIds(CohortGroupDto cohortGroupDto, Boolean allowUsageOutsideEu) {
+  private Map<String, Set<String>> getCohortGroupEhrIdsAft(CohortGroupDto cohortGroupDto, Boolean allowUsageOutsideEu) {
     CohortGroup cohortGroup = convertToCohortGroupEntity(cohortGroupDto);
     validateCohortParameters(cohortGroupDto);
-    Map<String, Set<String>> ehrIds = cohortExecutor.executeGroup2(cohortGroup, allowUsageOutsideEu);
+    Map<String, Set<String>> ehrIds = cohortExecutor.executeGroupAft(cohortGroup, allowUsageOutsideEu);
     if (ehrIds.values().stream().mapToInt(Set::size).anyMatch(e -> e < privacyProperties.getMinHits())) {
+      log.warn(RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
+      throw new PrivacyException(CohortService.class, RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
+    }
+    return ehrIds;
+  }
+
+  private Set<String> getCohortGroupEhrIds(CohortGroupDto cohortGroupDto, Boolean allowUsageOutsideEu) {
+    CohortGroup cohortGroup = convertToCohortGroupEntity(cohortGroupDto);
+    validateCohortParameters(cohortGroupDto);
+    Set<String> ehrIds = cohortExecutor.executeGroup(cohortGroup, allowUsageOutsideEu);
+    if (ehrIds.size() < privacyProperties.getMinHits()) {
       log.warn(RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
       throw new PrivacyException(CohortService.class, RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
     }

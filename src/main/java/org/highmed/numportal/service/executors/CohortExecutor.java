@@ -57,12 +57,12 @@ public class CohortExecutor {
     return SetUtils.emptySet();
   }
 
-  public Map<String, Set<String>> executeGroup2(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {///
+  public Map<String, Set<String>> executeGroupAft(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {///
     if (cohortGroup.getType() == Type.GROUP) {
 
       List<Map<String, Set<String>>> list =
           cohortGroup.getChildren().stream()
-              .map(e -> executeGroup2(e, allowUsageOutsideEu))
+              .map(e -> executeGroupAft(e, allowUsageOutsideEu))
               .toList();
 
       if (list.isEmpty()) {
@@ -78,7 +78,7 @@ public class CohortExecutor {
       }
 
     } else if (cohortGroup.getType() == Type.AQL) {
-      return aqlExecutor.execute2(
+      return aqlExecutor.executeAft(
           cohortGroup.getQuery(), cohortGroup.getParameters(), allowUsageOutsideEu);
     }
 
