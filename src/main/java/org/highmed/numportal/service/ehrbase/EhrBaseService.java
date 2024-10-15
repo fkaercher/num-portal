@@ -245,7 +245,20 @@ public class EhrBaseService {
 
     try {
       log.debug("EhrBase call to execute raw query: {}", queryString);
-      return restClient.aqlEndpoint().executeRaw(query);
+      if (featureProperties.isAft()) {
+        QueryResponseData data = aftRestClient.aqlEndpoint().executeRaw(query);
+        var result = new QueryResponseData();
+        result.setColumns(data.getColumns());
+        result.setRows(data.getRows().stream().map(e -> {
+          List<Object> l = new LinkedList<>();
+          l.add(e.get(0));
+          l.add(((List) e.get(1)).get(0));
+          return l;
+        }).toList());
+        return result;
+      } else {
+        return restClient.aqlEndpoint().executeRaw(query);
+      }
     } catch (WrongStatusCodeException e) {
       log.error(INVALID_AQL_QUERY, e.getMessage(), e);
       throw new WrongStatusCodeException("EhrBaseService.class", 93, 2);
