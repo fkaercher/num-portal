@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
 import org.ehrbase.openehr.sdk.aql.dto.containment.ContainmentClassExpression;
+import org.ehrbase.openehr.sdk.aql.dto.operand.CountDistinctAggregateFunction;
 import org.ehrbase.openehr.sdk.aql.dto.operand.IdentifiedPath;
 import org.ehrbase.openehr.sdk.aql.dto.path.AqlObjectPath;
 import org.ehrbase.openehr.sdk.aql.dto.select.SelectExpression;
@@ -15,6 +16,7 @@ import org.ehrbase.openehr.sdk.generator.commons.aql.query.NativeQuery;
 import org.ehrbase.openehr.sdk.generator.commons.aql.query.Query;
 import org.ehrbase.openehr.sdk.generator.commons.aql.record.Record;
 import org.ehrbase.openehr.sdk.generator.commons.aql.record.Record1;
+import org.ehrbase.openehr.sdk.generator.commons.aql.record.Record2;
 import org.ehrbase.openehr.sdk.response.dto.QueryResponseData;
 import org.ehrbase.openehr.sdk.response.dto.TemplatesResponseData;
 import org.ehrbase.openehr.sdk.response.dto.ehrscape.TemplateMetaDataDto;
@@ -22,6 +24,8 @@ import org.ehrbase.openehr.sdk.util.exception.ClientException;
 import org.ehrbase.openehr.sdk.util.exception.WrongStatusCodeException;
 import org.highmed.numportal.domain.model.Aql;
 import org.highmed.numportal.properties.EhrBaseProperties;
+import org.highmed.numportal.properties.FeatureProperties;
+import org.highmed.numportal.service.aft.AftRestClient;
 import org.highmed.numportal.service.exception.BadRequestException;
 import org.highmed.numportal.service.exception.SystemException;
 import org.highmed.numportal.service.util.AqlQueryConstants;
@@ -50,20 +54,27 @@ public class EhrBaseService {
   private static final String PSEUDONYM = "pseudonym";
 
   private final DefaultRestClient restClient;
+  private final AftRestClient aftRestClient;
   private final CompositionResponseDataBuilder compositionResponseDataBuilder;
   private final Pseudonymity pseudonymity;
   private final EhrBaseProperties ehrBaseProperties;
+  private final FeatureProperties featureProperties;
 
   @Autowired
   public EhrBaseService(
           DefaultRestClient restClient,
+          AftRestClient aftRestClient,
           CompositionResponseDataBuilder compositionResponseDataBuilder,
           @Lazy Pseudonymity pseudonymity,
-          EhrBaseProperties ehrBaseProperties) {
+          EhrBaseProperties ehrBaseProperties,
+          FeatureProperties featureProperties
+          ) {
     this.restClient = restClient;
+    this.aftRestClient = aftRestClient;
     this.compositionResponseDataBuilder = compositionResponseDataBuilder;
     this.pseudonymity = pseudonymity;
     this.ehrBaseProperties = ehrBaseProperties;
+    this.featureProperties = featureProperties;
   }
 
   /**
@@ -135,6 +146,56 @@ public class EhrBaseService {
         result.put(record.value1(), new HashSet<String>(record.value2()));
       }
       return result;
+    } catch (WrongStatusCodeException e) {
+      log.error(INVALID_AQL_QUERY, e.getMessage(), e);
+      throw new WrongStatusCodeException("EhrBaseService.class", 93, 1);
+    } catch (ClientException e) {
+      log.error(ERROR_MESSAGE, e.getMessage(), e);
+      throw new SystemException(EhrBaseService.class, AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL,
+              String.format(AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL, e.getMessage()));
+    }
+  }
+
+  /**
+   * Retrieves the number of patients for the given aql
+   *
+   * @param aql The aql to retrieve patient ids for
+   * @return number of patients
+   * @throws WrongStatusCodeException in case if a malformed aql
+   */
+  public int retrieveNumberOfPatients(Aql aql) {
+    return retrieveNumberOfPatients(aql.getQuery());
+  }
+
+  public int retrieveNumberOfPatients(String query) {
+    log.debug("EhrBase retrieve number of patients for query: {} ", query);
+    AqlQuery dto = AqlQueryParser.parse(query);
+    SelectExpression selectExpression = new SelectExpression();
+
+    var count = new CountDistinctAggregateFunction();
+    selectExpression.setColumnExpression(count);
+
+    IdentifiedPath ehrIdPath = new IdentifiedPath();
+    ehrIdPath.setPath(AqlObjectPath.parse(AqlQueryConstants.EHR_ID_PATH));
+
+    ContainmentClassExpression containmentClassExpression = new ContainmentClassExpression();
+    containmentClassExpression.setType(AqlQueryConstants.EHR_TYPE);
+    containmentClassExpression.setIdentifier(AqlQueryConstants.EHR_CONTAINMENT_IDENTIFIER);
+    ehrIdPath.setRoot(containmentClassExpression);
+
+    count.setIdentifiedPath(ehrIdPath);
+
+    dto.getSelect().setStatement(List.of(selectExpression));
+    log.info("Generated query for retrieveNumberOfPatients {} ", AqlRenderer.render(dto));
+
+    try {
+      if (featureProperties.isAft()) {
+        List<Record2<String, Integer>> results = aftRestClient.aqlEndpoint().execute(Query.buildNativeQuery(AqlRenderer.render(dto), String.class, Integer.class));
+        return results.stream().mapToInt(Record2::value2).sum();
+      } else {
+        List<Record1<Integer>> results = restClient.aqlEndpoint().execute(Query.buildNativeQuery(AqlRenderer.render(dto), Integer.class));
+        return results.get(0).value1();
+      }
     } catch (WrongStatusCodeException e) {
       log.error(INVALID_AQL_QUERY, e.getMessage(), e);
       throw new WrongStatusCodeException("EhrBaseService.class", 93, 1);

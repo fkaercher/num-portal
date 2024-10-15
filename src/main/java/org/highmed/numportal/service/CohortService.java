@@ -174,9 +174,9 @@ public class CohortService {
       policies.add(TemplatesPolicy.builder().templatesMap(Map.of(templateId, templateId)).build());
       policyService.apply(aql, policies);
 
-      Set<String> templateHits =
-          ehrBaseService.retrieveEligiblePatientIds(AqlRenderer.render(aql));
-      hits.put(templateId, templateHits != null ? templateHits.size() : 0);
+      int templateHits =
+          ehrBaseService.retrieveNumberOfPatients(AqlRenderer.render(aql));
+      hits.put(templateId, templateHits);
 
     } catch (Exception e) {
       log.error(e.getMessage(), e);
