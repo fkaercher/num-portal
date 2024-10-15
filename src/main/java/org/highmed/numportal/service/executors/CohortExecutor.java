@@ -72,7 +72,7 @@ public class CohortExecutor {
                 HashMap::new,
                 (map, location) -> map.put(location,
                         setOperations.apply(
-                                cohortGroup.getOperator(), list.stream().map(e -> e.get(location)).toList(), ehrBaseService.getAllPatientIds2().get(location))),
+                                cohortGroup.getOperator(), list.stream().map(e -> e.get(location)).toList(), ehrBaseService.getAllPatientIdsAft().get(location))),
                 Map::putAll
         );
       }

@@ -216,7 +216,7 @@ public class EhrBaseService {
     return retrieveEligiblePatientIds(ALL_PATIENTS_IDS);
   }
 
-  public Map<String, Set<String>> getAllPatientIds2() {
+  public Map<String, Set<String>> getAllPatientIdsAft() {
     return retrieveEligiblePatientIdsAft(ALL_PATIENTS_IDS);
   }
 
