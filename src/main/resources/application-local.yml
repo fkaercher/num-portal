@@ -85,6 +85,9 @@ ehrbase:
   password: SuperSecretPassword
   id-path: "ehr_id/value"
 
+aft:
+  url: http://localhost:8071/
+
 privacy:
   enabled: false
   minHits: 0

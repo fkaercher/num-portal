@@ -1,6 +1,5 @@
 package org.highmed.numportal.config;
 
-import org.highmed.numportal.properties.EhrBaseProperties;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -10,6 +9,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.ehrbase.openehr.sdk.client.openehrclient.OpenEhrClientConfig;
 import org.ehrbase.openehr.sdk.client.openehrclient.defaultrestclient.DefaultRestClient;
+import org.highmed.numportal.properties.AftProperties;
+import org.highmed.numportal.properties.EhrBaseProperties;
+import org.highmed.numportal.service.aft.AftRestClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -23,6 +26,7 @@ import java.net.URISyntaxException;
 public class EhrBaseConfig {
 
   private final EhrBaseProperties ehrBaseProperties;
+  private final AftProperties aftProperties;
 
   @Bean
   public CommonsRequestLoggingFilter requestLoggingFilter() {
@@ -47,5 +51,15 @@ public class EhrBaseConfig {
 
     return new DefaultRestClient(
         new OpenEhrClientConfig(new URI(ehrBaseProperties.getRestApiUrl())), null, httpClient);
+  }
+
+  @Bean
+  @ConditionalOnProperty(value = "feature.aft", havingValue = "true")
+  public AftRestClient createAftClient() throws URISyntaxException {
+    CloseableHttpClient httpClient =
+        HttpClientBuilder.create().build();
+
+    return new AftRestClient(
+        new OpenEhrClientConfig(new URI(aftProperties.getUrl())), null, httpClient);
   }
 }
