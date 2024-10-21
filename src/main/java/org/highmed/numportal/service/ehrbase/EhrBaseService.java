@@ -30,6 +30,7 @@ import org.highmed.numportal.service.exception.BadRequestException;
 import org.highmed.numportal.service.exception.SystemException;
 import org.highmed.numportal.service.util.AqlQueryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -378,7 +379,12 @@ public class EhrBaseService {
       throw new BadRequestException(EhrBaseService.class, NO_DATA_COLUMNS_IN_THE_QUERY_RESULT);
     }
     String ehrStatusPath = columns.get(0).get(PATH);
-    if (ehrStatusPath == null || !ehrStatusPath.equals("/" + ehrBaseProperties.getIdPath())) {
+
+    System.out.println("#########################");
+    System.out.println(ehrStatusPath);
+    System.out.println("/" + ehrBaseProperties.getIdPath());
+
+    if (ehrStatusPath == null || !ehrStatusPath.equals("e/" + ehrBaseProperties.getIdPath())) {
       throw new SystemException(EhrBaseService.class, QUERY_RESULT_DOESN_T_CONTAIN_EHR_STATUS_COLUMN);
     }
     columns.remove(0);

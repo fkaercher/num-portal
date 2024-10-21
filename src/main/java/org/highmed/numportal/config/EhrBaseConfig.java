@@ -54,7 +54,7 @@ public class EhrBaseConfig {
   }
 
   @Bean
-  @ConditionalOnProperty(value = "feature.aft", havingValue = "true")
+  //@ConditionalOnProperty(value = "feature.aft", havingValue = "true")
   public AftRestClient createAftClient() throws URISyntaxException {
     CloseableHttpClient httpClient =
         HttpClientBuilder.create().build();

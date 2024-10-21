@@ -114,4 +114,4 @@ user-service:
 
 feature:
   search-with-aql: on
-  aft: on
+  aft: off
