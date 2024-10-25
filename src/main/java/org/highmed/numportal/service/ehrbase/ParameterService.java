@@ -123,7 +123,7 @@ public class ParameterService {
 
     var parameterOptions = new ParameterOptionsDto();
 
-    var queryResponseData = ehrBaseService.executePlainQuery(query);
+    var queryResponseData = ehrBaseService.executePlainQuery2(query);
     queryResponseData
         .getRows()
         .forEach(

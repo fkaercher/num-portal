@@ -269,6 +269,22 @@ public class EhrBaseService {
               String.format(AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL, e.getMessage()));
     }
   }
+  public QueryResponseData executePlainQuery2(String queryString) {
+
+    NativeQuery<Record> query = Query.buildNativeQuery(queryString);
+
+    try {
+      log.debug("EhrBase call to execute raw query: {}", queryString);
+      return restClient.aqlEndpoint().executeRaw(query);
+    } catch (WrongStatusCodeException e) {
+      log.error(INVALID_AQL_QUERY, e.getMessage(), e);
+      throw new WrongStatusCodeException("EhrBaseService.class", 93, 2);
+    } catch (ClientException e) {
+      log.error(ERROR_MESSAGE, e.getMessage(), e);
+      throw new SystemException(EhrBaseService.class, AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL,
+              String.format(AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL, e.getMessage()));
+    }
+  }
 
   private void addSelectSecondlevelPseudonyms(AqlQuery aqlDto) {
     SelectExpression selectExpression = new SelectExpression();
