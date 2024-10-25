@@ -1,29 +1,81 @@
 services:
   num-portal-webapp:
-    extends:
-      file: compose-common.yaml
-      service: num-portal-webapp
+    container_name: num-portal-webapp
+    build:
+      context: https://github.com/fkaercher/num-portal-webapp.git#develop
+      args:
+        - env_name=dev
+        - api_baseUrl=http://localhost:8090
+        - auth_baseUrl=http://localhost:8100
+        - auth_realm=crr
+        - auth_clientId=num-portal-webapp
+        - legal_copyrightOwner=2024
+        - welcomePageTitle_de=Willkommen
+        - welcomePageTitle_en=Welcome
+    ports:
+      - "127.0.0.1:4200:80"
+    networks:
+      num-net:
+    depends_on:
+      - num-portal
+      - num-keycloak
 
   num-portal:
-    extends:
-      file: compose-common.yaml
-      service: num-portal
-    env_file:
-      - .env
+    container_name: num-portal
+    build:
+      dockerfile: docker/num-portal/Dockerfile
+      context: .
     environment:
+      spring_profiles_active: local,docker
+      PORT: 8080
+      DB_ADDRESS: "num-db:5432"
+      DB_USER: num
+      DB_PORT: num
+      DB_ATT_USER: num-attachment
+      DB_ATT_PORT: num-attachment
+      KEYCLOAK_ADDRESS: http://num-keycloak:8080
+      KEYCLOAK_USER: numPortalWebapp
+      KEYCLOAK_PASS: numPortalWebapp
+      KEYCLOAK_CLIENT_SECRET: "czPCJDlycHGiJkrCTGUgyRV2cDs3cgxk"
       EHRBASE_ADDRESS: ${EHRBASE_ADDRESS}
       EHRBASE_USER: ${EHRBASE_USER}
       EHRBASE_PASS: ${EHRBASE_PASS}
+      URL: http://localhost:8090
+    ports:
+      - "127.0.0.1:8090:8080"
+    networks:
+      num-net:
+      ehrbase-net:
+    depends_on:
+      - num-db
+      - num-keycloak
+    env_file:
+      - .env
 
   num-db:
-    extends:
-      file: compose-common.yaml
-      service: num-db
+    container_name: num-db
+    build:
+      dockerfile: docker/num-db/Dockerfile
+      context: .
+    environment:
+      POSTGRES_PASSWORD: geheim
+    ports:
+      - "127.0.0.1:5472:5432"
+    volumes:
+      - num-db-data:/var/lib/postgresql/data
+    networks:
+      num-net:
 
   num-keycloak:
-    extends:
-      file: compose-common.yaml
-      service: num-keycloak
+    container_name: num-keycloak
+    build: docker/num-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "127.0.0.1:8100:8080"
+    networks:
+      num-net:
 
 volumes:
   num-db-data:
