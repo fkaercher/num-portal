@@ -80,13 +80,14 @@ logging:
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 ehrbase:
+  #rest-api-url: http://localhost:38090/
   rest-api-url: http://localhost:8070/ehrbase/
   username: ehrbase-user
   password: SuperSecretPassword
   id-path: "ehr_id/value"
 
 aft:
-  url: http://localhost:8071/
+  url: http://localhost:38090/
 
 privacy:
   enabled: false
@@ -114,4 +115,4 @@ user-service:
 
 feature:
   search-with-aql: on
-  aft: off
+  aft: on
