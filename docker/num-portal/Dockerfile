@@ -4,6 +4,8 @@ ENV HOME=/opt/num-portal
 WORKDIR $HOME
 RUN mkdir -p $HOME
 
+ARG MAVEN_OPTS="-Dhttp.proxyHost=${http_proxy_host} -Dhttp.proxyPort=${http_proxy_port} -Dhttps.proxyHost=${https_proxy_host} -Dhttps.proxyPort=${https_proxy_port}"
+
 ADD mvnw $HOME
 ADD .mvn/wrapper $HOME/.mvn/wrapper
 ADD pom.xml $HOME

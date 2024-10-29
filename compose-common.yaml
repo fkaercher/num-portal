@@ -2,7 +2,7 @@ services:
   num-portal-webapp:
     container_name: num-portal-webapp
     build:
-      context: https://github.com/fkaercher/num-portal-webapp.git#develop
+      context: https://github.com/fkaercher/num-portal-webapp.git#demo
       args:
         - env_name=dev
         - api_baseUrl=http://localhost:8090
@@ -12,19 +12,29 @@ services:
         - legal_copyrightOwner=2024
         - welcomePageTitle_de=Willkommen
         - welcomePageTitle_en=Welcome
+        - HTTP_PROXY=${HTTP_PROXY:-}
+        - HTTPS_PROXY=${HTTPS_PROXY:-}
     ports:
-      - "127.0.0.1:4200:80"
+      - "4200:80"
     networks:
       num-net:
     depends_on:
       - num-portal
       - num-keycloak
+    env_file:
+      - path: .env
+        required: false
 
   num-portal:
     container_name: num-portal
     build:
       dockerfile: docker/num-portal/Dockerfile
       context: .
+      args:
+        - http_proxy_host=${http_proxy_host:-}
+        - http_proxy_port=${http_proxy_port:-}
+        - https_proxy_host=${https_proxy_host:-}
+        - https_proxy_port=${https_proxy_port:-}
     environment:
       spring_profiles_active: local,docker
       PORT: 8080
@@ -42,13 +52,16 @@ services:
       EHRBASE_PASS: SuperSecretPassword
       URL: http://localhost:8090
     ports:
-      - "127.0.0.1:8090:8080"
+      - "8090:8080"
     networks:
       num-net:
       ehrbase-net:
     depends_on:
       - num-db
       - num-keycloak
+    env_file:
+      - path: .env
+        required: false
 
   num-db:
     container_name: num-db
@@ -66,14 +79,25 @@ services:
 
   num-keycloak:
     container_name: num-keycloak
-    build: docker/num-keycloak
+    build:
+      context: docker/num-keycloak
+      args:
+        - http_proxy=${HTTP_PROXY:-}
+        - https_proxy=${HTTPS_PROXY:-}
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
     ports:
-      - "127.0.0.1:8100:8080"
+      - "8100:8080"
     networks:
       num-net:
+    env_file:
+      - path: .env
+        required: false
 
   ehrbase:
     container_name: ehrbase
