@@ -1,6 +1,7 @@
 FROM maven:3.8-openjdk-17 as build-mail-whitelisting-plugin
 RUN git clone --depth=1 -b v1.1.0 https://github.com/askask/mail-whitelisting.git
 WORKDIR mail-whitelisting
+ARG MAVEN_OPTS="-Dhttp.proxyHost=${http_proxy_host} -Dhttp.proxyPort=${http_proxy_port} -Dhttps.proxyHost=${https_proxy_host} -Dhttps.proxyPort=${https_proxy_port}"
 RUN mvn clean install
 
 
