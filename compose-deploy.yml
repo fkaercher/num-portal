@@ -35,7 +35,7 @@ services:
     extends:
       file: compose-common.yaml
       service: num-keycloak
-    command: start --hostname ${KC_HOST} --proxy-headers xforwarded
+    command: start --hostname ${KC_HOST} --proxy-headers xforwarded --http-enabled true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.num-kc.rule=Host(`${KC_HOST}`)"
