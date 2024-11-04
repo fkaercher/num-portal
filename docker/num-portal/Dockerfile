@@ -18,4 +18,5 @@ RUN /opt/num-portal/mvnw clean package -Dmaven.test.skip=true
 FROM sapmachine:21-jdk-headless-ubuntu
 
 COPY --from=build /opt/num-portal/target/num-portal-*.jar /opt/num-portal/num-portal.jar
+EXPOSE 8080/tcp
 CMD ["java", "-jar", "/opt/num-portal/num-portal.jar"]

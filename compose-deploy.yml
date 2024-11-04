@@ -1,0 +1,53 @@
+services:
+  num-portal-webapp:
+    extends:
+      file: compose-common.yaml
+      service: num-portal-webapp
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.num-fe.rule=Host(`${WEB_HOST}`)"
+      - "traefik.http.routers.num-fe.entrypoints=websecure"
+      - "traefik.http.routers.num-fe.tls.certresolver=myresolver"
+
+  num-portal:
+    extends:
+      file: compose-common.yaml
+      service: num-portal
+    env_file:
+      - .env
+    environment:
+      EHRBASE_ADDRESS: ${EHRBASE_ADDRESS}
+      EHRBASE_USER: ${EHRBASE_USER}
+      EHRBASE_PASS: ${EHRBASE_PASS}
+      KEYCLOAK_CLIENT_SECRET: ${KC_SECRET}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.num-be.rule=Host(`${BACKEND_HOST}`)"
+      - "traefik.http.routers.num-be.entrypoints=websecure"
+      - "traefik.http.routers.num-be.tls.certresolver=myresolver"
+
+  num-db:
+    extends:
+      file: compose-common.yaml
+      service: num-db
+
+  num-keycloak:
+    extends:
+      file: compose-common.yaml
+      service: num-keycloak
+    command: start --hostname ${KC_HOST} --proxy-headers xforwarded
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.num-kc.rule=Host(`${KC_HOST}`)"
+      - "traefik.http.routers.num-kc.entrypoints=websecure"
+      - "traefik.http.routers.num-kc.tls.certresolver=myresolver"
+
+volumes:
+  num-db-data:
+
+networks:
+  num-net:
+  ehrbase-net:
+  public:
+    external: true
+    name: traefik

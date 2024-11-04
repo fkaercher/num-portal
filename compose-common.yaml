@@ -5,8 +5,8 @@ services:
       context: https://github.com/fkaercher/num-portal-webapp.git#demo
       args:
         - env_name=dev
-        - api_baseUrl=http://localhost:8090
-        - auth_baseUrl=http://localhost:8100
+        - api_baseUrl=https://${BACKEND_HOST}
+        - auth_baseUrl=https://${KC_HOST}
         - auth_realm=crr
         - auth_clientId=num-portal-webapp
         - legal_copyrightOwner=2024
@@ -14,10 +14,11 @@ services:
         - welcomePageTitle_en=Welcome
         - HTTP_PROXY=${HTTP_PROXY:-}
         - HTTPS_PROXY=${HTTPS_PROXY:-}
-    ports:
-      - "4200:80"
+    #ports:
+    #  - "4200:80"
     networks:
       num-net:
+      public:
     depends_on:
       - num-portal
       - num-keycloak
@@ -43,19 +44,20 @@ services:
       DB_PORT: num
       DB_ATT_USER: num-attachment
       DB_ATT_PORT: num-attachment
-      KEYCLOAK_ADDRESS: http://num-keycloak:8080
+      KEYCLOAK_ADDRESS: https://${KC_HOST}
       KEYCLOAK_USER: numPortalWebapp
       KEYCLOAK_PASS: numPortalWebapp
       KEYCLOAK_CLIENT_SECRET: "czPCJDlycHGiJkrCTGUgyRV2cDs3cgxk"
       EHRBASE_ADDRESS: http://ehrbase2:8080/ehrbase/
       EHRBASE_USER: ehrbase-user
       EHRBASE_PASS: SuperSecretPassword
-      URL: http://localhost:8090
-    ports:
-      - "8090:8080"
+      URL: https://${BACKEND_HOST}
+    #ports:
+    #  - "8090:8080"
     networks:
       num-net:
       ehrbase-net:
+      public:
     depends_on:
       - num-db
       - num-keycloak
@@ -85,16 +87,17 @@ services:
         - http_proxy=${HTTP_PROXY:-}
         - https_proxy=${HTTPS_PROXY:-}
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_HTTP_ENABLED: true
-    ports:
-      - "8100:8080"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HOSTNAME: ${KC_HOST}
+      #KC_HOSTNAME_STRICT: false
+      #KC_HOSTNAME_STRICT_HTTPS: false
+      #KC_HTTP_ENABLED: true
+    #ports:
+    #  - "8100:8080"
     networks:
       num-net:
+      public:
     env_file:
       - path: .env
         required: false
