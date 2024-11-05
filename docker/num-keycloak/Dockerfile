@@ -5,7 +5,7 @@ ARG MAVEN_OPTS="-Dhttp.proxyHost=${http_proxy_host} -Dhttp.proxyPort=${http_prox
 RUN mvn clean install
 
 
-FROM quay.io/keycloak/keycloak:24.0.3
+FROM quay.io/keycloak/keycloak:26.0
 
 COPY --from=build-mail-whitelisting-plugin /mail-whitelisting/target/mail-whitelisting-1.1.0-SNAPSHOT.jar /opt/keycloak/providers/
 ADD ./crr-with-user.json /opt/keycloak_import/realm.json
