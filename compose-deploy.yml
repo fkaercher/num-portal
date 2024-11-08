@@ -20,6 +20,7 @@ services:
       EHRBASE_USER: ${EHRBASE_USER}
       EHRBASE_PASS: ${EHRBASE_PASS}
       KEYCLOAK_CLIENT_SECRET: ${KC_SECRET}
+      AFT_URL: ${AFT_URL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.num-be.rule=Host(`${BACKEND_HOST}`)"
@@ -35,6 +36,10 @@ services:
     extends:
       file: compose-common.yaml
       service: num-keycloak
+    build:
+      args:
+        WEB_URL: ${WEB_URL}
+        CLIENT_SECRET: ${KC_SECRET}
     command: start --hostname ${KC_HOST} --proxy-headers xforwarded --http-enabled true
     labels:
       - "traefik.enable=true"
