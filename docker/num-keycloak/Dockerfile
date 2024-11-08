@@ -5,9 +5,17 @@ ARG MAVEN_OPTS="-Dhttp.proxyHost=${http_proxy_host} -Dhttp.proxyPort=${http_prox
 RUN mvn clean install
 
 
+FROM tencentcom/envsubst as realm
+
+ARG WEB_URL
+ARG CLIENT_SECRET
+ADD ./crr-with-user.json /crr-with-user.json
+RUN envsubst '$WEB_URL,$CLIENT_SECRET' < /crr-with-user.json > /realm.json
+
+
 FROM quay.io/keycloak/keycloak:26.0
 
 COPY --from=build-mail-whitelisting-plugin /mail-whitelisting/target/mail-whitelisting-1.1.0-SNAPSHOT.jar /opt/keycloak/providers/
-ADD ./crr-with-user.json /opt/keycloak_import/realm.json
+COPY --from=realm /realm.json /opt/keycloak_import/realm.json
 RUN /opt/keycloak/bin/kc.sh import --file /opt/keycloak_import/realm.json
 CMD ["start-dev"]

@@ -86,6 +86,8 @@ services:
       args:
         - http_proxy=${HTTP_PROXY:-}
         - https_proxy=${HTTPS_PROXY:-}
+        - WEB_URL="http://localhost:4200"
+        - CLIENT_SECRET="czPCJDlycHGiJkrCTGUgyRV2cDs3cgxk"
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
