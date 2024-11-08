@@ -11,8 +11,6 @@ There are two options to run the portal using Docker:
      - Run: `docker-compose -f compose-demo-without-ehrbase.yaml up`
       
   - Go to http://localhost:4200 and login with user superadmin, password super
-  - Go to user_details table in the numportal database and set superadmin user approved = true
-  - reload the portal in your browser
 
 
 ## Building and running locally

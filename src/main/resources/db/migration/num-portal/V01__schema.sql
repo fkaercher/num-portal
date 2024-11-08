@@ -1,7 +1,7 @@
 --
 -- Organization
 --
-CREATE TABLE organization
+CREATE TABLE IF NOT EXISTS organization
 (
     id          serial PRIMARY KEY,
     name        varchar(50) UNIQUE NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE maildomain
 --
 -- User details
 --
-CREATE TABLE user_details
+CREATE TABLE IF NOT EXISTS user_details
 (
     user_id         varchar(250) PRIMARY KEY,
     approved        boolean NOT NULL,

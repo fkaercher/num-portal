@@ -1,9 +1,6 @@
 # setup quick demo of num portal — do not use for publicly accessible deployment!
 
-# To access the NUM portal:
-#  - login in with user superadmin, password super
-#  - in the user_details table in the numportal database set approved = true
-#  - reload the NUM portal in your browser
+# To access the NUM portal, login in with user superadmin, password super
 
 # For further information how to use the portal, see the user manual: https://num-portal-webapp.readthedocs.io/de/latest/
 
