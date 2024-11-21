@@ -53,6 +53,7 @@ public class TemplateService {
     List<TemplateMetaDataDto> templateMetaDataDtos = ehrBaseService.getAllTemplatesMetadata();
     return templateMetaDataDtos.stream()
                                .map(templateMapper::convertToTemplateMetadataDto)
+                               .sorted((t1, t2) -> String.CASE_INSENSITIVE_ORDER.compare(t1.getTemplateId(), t2.getTemplateId()))
                                .collect(Collectors.toList());
   }
 
