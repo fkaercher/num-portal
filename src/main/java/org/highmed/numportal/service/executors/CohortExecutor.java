@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Set;
 
 import static org.highmed.numportal.domain.templates.ExceptionsTemplate.CANNOT_EXECUTE_AN_EMPTY_COHORT;
@@ -30,15 +31,33 @@ public class CohortExecutor {
       throw new IllegalArgumentException(CohortExecutor.class, CANNOT_EXECUTE_AN_EMPTY_COHORT);
     }
 
-    return executeGroup(cohort.getCohortGroup(), allowUsageOutsideEu);
+    return executePatientIds(cohort.getCohortGroup(), allowUsageOutsideEu);
   }
 
-  public Set<String> executeGroup(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
+  public Set<String> executePatientIds(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
     var aqlWithParams = aqlCombiner.combineQuery(cohortGroup);
     var query = aqlExecutor.prepareQuery(aqlWithParams, allowUsageOutsideEu);
     if (query == null) {
       return Set.of();
     }
     return ehrBaseService.retrieveEligiblePatientIds(query);
+  }
+
+  public long executeNumberOfPatients(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
+    var aqlWithParams = aqlCombiner.combineQuery(cohortGroup);
+    var query = aqlExecutor.prepareQuery(aqlWithParams, allowUsageOutsideEu);
+    if (query == null) {
+      return 0L;
+    }
+    return ehrBaseService.retrieveNumberOfPatients(query);
+  }
+
+  public Map<String, Integer> executeNumberOfPatientsPerPath(CohortGroup cohortGroup, Boolean allowUsageOutsideEu, String path) {
+    var aqlWithParams = aqlCombiner.combineQuery(cohortGroup);
+    var query = aqlExecutor.prepareQuery(aqlWithParams, allowUsageOutsideEu);
+    if (query == null) {
+      return Map.of();
+    }
+    return ehrBaseService.retrieveNumberOfPatientsPerPath(query, path);
   }
 }

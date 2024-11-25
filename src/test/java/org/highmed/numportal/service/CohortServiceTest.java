@@ -1,40 +1,65 @@
 package org.highmed.numportal.service;
 
-import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
-import org.ehrbase.openehr.sdk.aql.parser.AqlQueryParser;
-import org.ehrbase.openehr.sdk.response.dto.QueryResponseData;
-import org.highmed.numportal.domain.dto.*;
-import org.highmed.numportal.domain.model.*;
-import org.highmed.numportal.service.exception.*;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.*;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.modelmapper.ModelMapper;
+import org.highmed.numportal.domain.dto.CohortAqlDto;
+import org.highmed.numportal.domain.dto.CohortDto;
+import org.highmed.numportal.domain.dto.CohortGroupDto;
+import org.highmed.numportal.domain.dto.CohortSizeDto;
+import org.highmed.numportal.domain.dto.TemplateSizeRequestDto;
+import org.highmed.numportal.domain.model.Cohort;
+import org.highmed.numportal.domain.model.CohortAql;
+import org.highmed.numportal.domain.model.CohortGroup;
+import org.highmed.numportal.domain.model.Operator;
+import org.highmed.numportal.domain.model.Project;
+import org.highmed.numportal.domain.model.ProjectStatus;
+import org.highmed.numportal.domain.model.Type;
 import org.highmed.numportal.domain.model.admin.UserDetails;
 import org.highmed.numportal.domain.repository.CohortRepository;
 import org.highmed.numportal.domain.repository.ProjectRepository;
 import org.highmed.numportal.domain.templates.ExceptionsTemplate;
 import org.highmed.numportal.properties.PrivacyProperties;
 import org.highmed.numportal.service.ehrbase.EhrBaseService;
+import org.highmed.numportal.service.exception.BadRequestException;
+import org.highmed.numportal.service.exception.ForbiddenException;
+import org.highmed.numportal.service.exception.PrivacyException;
+import org.highmed.numportal.service.exception.ResourceNotFound;
+import org.highmed.numportal.service.exception.SystemException;
 import org.highmed.numportal.service.executors.CohortExecutor;
 import org.highmed.numportal.service.policy.ProjectPolicyService;
 
-import java.util.*;
+import org.ehrbase.openehr.sdk.response.dto.QueryResponseData;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.modelmapper.ModelMapper;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.highmed.numportal.domain.templates.ExceptionsTemplate.CANNOT_ACCESS_THIS_RESOURCE_USER_IS_NOT_APPROVED;
+import static org.highmed.numportal.domain.templates.ExceptionsTemplate.USER_NOT_FOUND;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.*;
-import static org.highmed.numportal.domain.templates.ExceptionsTemplate.CANNOT_ACCESS_THIS_RESOURCE_USER_IS_NOT_APPROVED;
-import static org.highmed.numportal.domain.templates.ExceptionsTemplate.USER_NOT_FOUND;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CohortServiceTest {
@@ -412,9 +437,10 @@ public class CohortServiceTest {
                         .children(List.of(first, second))
                         .build();
 
+        when(cohortExecutor.executeNumberOfPatients(any(), anyBoolean())).thenReturn(2L);
         long size = cohortService.getCohortGroupSize(orCohort, approvedUser.getUserId(), false);
         Mockito.verify(cohortExecutor, times(1))
-                .executeGroup(cohortGroupCaptor.capture(), booleanCaptor.capture());
+                .executeNumberOfPatients(cohortGroupCaptor.capture(), booleanCaptor.capture());
 
         assertEquals(2, size);
         CohortGroup executedCohortGroup = cohortGroupCaptor.getValue();
@@ -489,26 +515,20 @@ public class CohortServiceTest {
                 .templateIds(List.of("Alter"))
                 .cohortDto(cohortDto)
                 .build();
-        when(cohortExecutor.execute(any(Cohort.class), Mockito.eq(false)))
-                .thenReturn(Set.of("1", "2", "3", "4", "5"));
-        AqlQuery aqlDto = AqlQueryParser.parse(query);
-        when(templateService.createSelectCompositionQuery(Mockito.eq("Alter"))).thenReturn(aqlDto);
-        when(ehrBaseService.retrieveEligiblePatientIds(Mockito.any(String.class))).thenReturn(Set.of("id1", "id2", "id3"));
+        when(cohortExecutor.executeNumberOfPatients(any(CohortGroup.class), Mockito.eq(false))).thenReturn(10L);
         cohortService.getSizePerTemplates(approvedUser.getUserId(), requestDto);
-        verify(cohortExecutor, times(1)).execute(any(), anyBoolean());
+        verify(cohortExecutor, times(1)).executeNumberOfPatientsPerPath(any(), anyBoolean(), eq(CohortService.TEMPLATE_PATH));
     }
 
     @Test
     public void getCohortGroupSizeWithDistributionTest() {
         CohortAqlDto cohortAqlDto = CohortAqlDto.builder().id(1L).name(NAME1).query(Q1).build();
         CohortGroupDto groupDto = CohortGroupDto.builder().type(Type.AQL).query(cohortAqlDto).build();
-        Mockito.when(contentService.getClinics(approvedUser.getUserId())).thenReturn(List.of("clinic one"));
-        QueryResponseData responseData1 = new QueryResponseData();
-        responseData1.setRows(  List.of(
-                new ArrayList<>(List.of("ehr-id-1", Map.of("_type", "OBSERVATION", "uuid", "12"))),
-                new ArrayList<>(List.of("ehr-id-2", Map.of("_type", "OBSERVATION", "uuid", "123")))));
-        String sizePerHopitalQuery = String.format(CohortService.GET_PATIENTS_PER_CLINIC, "clinic one", "'test1','test2'");
-        when(ehrBaseService.executePlainQuery(Mockito.eq(sizePerHopitalQuery))).thenReturn(responseData1);
+        when(cohortExecutor.executeNumberOfPatients(any(CohortGroup.class), Mockito.eq(false))).thenReturn(3L);
+        Map<String, Integer> responseData1 = (Map.of(
+                "clinic one", 10
+        ));
+        when(cohortExecutor.executeNumberOfPatientsPerPath(any(CohortGroup.class), eq(false), eq(CohortService.HOSPITAL_PATH))).thenReturn(responseData1);
         QueryResponseData responseData2 = new QueryResponseData();
         responseData2.setRows( List.of(new ArrayList<>(List.of(10))));
         for (int age = 0; age < 122; age += 10) {
@@ -612,7 +632,7 @@ public class CohortServiceTest {
         LinkedHashSet<String> ehrIds = new LinkedHashSet<>();
         ehrIds.add("test1");
         ehrIds.add("test2");
-        when(cohortExecutor.executeGroup(any(), anyBoolean())).thenReturn(ehrIds);
+        when(cohortExecutor.executePatientIds(any(), anyBoolean())).thenReturn(ehrIds);
 
         when(privacyProperties.getMinHits()).thenReturn(2);
     }

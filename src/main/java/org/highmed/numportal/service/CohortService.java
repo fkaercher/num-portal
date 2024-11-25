@@ -8,6 +8,7 @@ import org.highmed.numportal.domain.model.Cohort;
 import org.highmed.numportal.domain.model.CohortGroup;
 import org.highmed.numportal.domain.model.Project;
 import org.highmed.numportal.domain.model.ProjectStatus;
+import org.highmed.numportal.domain.model.Type;
 import org.highmed.numportal.domain.repository.CohortRepository;
 import org.highmed.numportal.domain.repository.ProjectRepository;
 import org.highmed.numportal.properties.PrivacyProperties;
@@ -17,16 +18,11 @@ import org.highmed.numportal.service.exception.ForbiddenException;
 import org.highmed.numportal.service.exception.PrivacyException;
 import org.highmed.numportal.service.exception.ResourceNotFound;
 import org.highmed.numportal.service.executors.CohortExecutor;
-import org.highmed.numportal.service.policy.EhrPolicy;
-import org.highmed.numportal.service.policy.Policy;
-import org.highmed.numportal.service.policy.ProjectPolicyService;
-import org.highmed.numportal.service.policy.TemplatesPolicy;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
 import org.ehrbase.openehr.sdk.aql.dto.condition.ComparisonOperatorCondition;
 import org.ehrbase.openehr.sdk.aql.dto.condition.LogicalOperatorCondition;
@@ -34,20 +30,18 @@ import org.ehrbase.openehr.sdk.aql.dto.condition.WhereCondition;
 import org.ehrbase.openehr.sdk.aql.dto.operand.Operand;
 import org.ehrbase.openehr.sdk.aql.dto.operand.QueryParameter;
 import org.ehrbase.openehr.sdk.aql.parser.AqlQueryParser;
-import org.ehrbase.openehr.sdk.aql.render.AqlRenderer;
 import org.ehrbase.openehr.sdk.response.dto.QueryResponseData;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.highmed.numportal.domain.templates.ExceptionsTemplate.CHANGING_COHORT_ONLY_ALLOWED_BY_THE_OWNER_OF_THE_PROJECT;
@@ -66,11 +60,8 @@ import static org.highmed.numportal.domain.templates.ExceptionsTemplate.RESULTS_
 @AllArgsConstructor
 public class CohortService {
 
-  public static final String GET_PATIENTS_PER_CLINIC =
-      "SELECT e/ehr_id/value as patient_id "
-          + "FROM EHR e CONTAINS COMPOSITION c "
-          + "WHERE c/context/health_care_facility/name = '%s'"
-          + "AND e/ehr_id/value MATCHES {%s} ";
+  public static final String TEMPLATE_PATH = "archetype_details/template_id/value";
+  public static final String HOSPITAL_PATH = "context/health_care_facility/name";
   public static final String GET_PATIENTS_PER_AGE_INTERVAL =
       "SELECT count(e/ehr_id/value) "
           + "FROM EHR e contains OBSERVATION o0[openEHR-EHR-OBSERVATION.age.v0] "
@@ -87,10 +78,7 @@ public class CohortService {
   private final AqlService aqlService;
   private final ProjectRepository projectRepository;
   private final PrivacyProperties privacyProperties;
-  private final ProjectPolicyService policyService;
   private final EhrBaseService ehrBaseService;
-  private final ContentService contentService;
-  private final TemplateService templateService;
 
   public Cohort getCohort(Long cohortId, String userId) {
     userDetailsService.checkIsUserApproved(userId);
@@ -143,8 +131,8 @@ public class CohortService {
 
   public long getCohortGroupSize(CohortGroupDto cohortGroupDto, String userId, Boolean allowUsageOutsideEu) {
     userDetailsService.checkIsUserApproved(userId);
-    Set<String> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
-    return ehrIds.size();
+    CohortGroup cohortGroup = convertToCohortGroupEntity(cohortGroupDto);
+    return getCohortGroupSizeAndCheck(cohortGroup, allowUsageOutsideEu);
   }
 
   public int getRoundedSize(long size) {
@@ -155,47 +143,12 @@ public class CohortService {
       String userId, TemplateSizeRequestDto requestDto) {
     userDetailsService.checkIsUserApproved(userId);
 
-    Cohort cohort =
-        Cohort.builder()
-              .cohortGroup(convertToCohortGroupEntity(requestDto.getCohortDto().getCohortGroup()))
-              .build();
+    CohortGroup cohortGroup = convertToCohortGroupEntity(requestDto.getCohortDto().getCohortGroup());
+    getCohortGroupSizeAndCheck(cohortGroup, false);
 
-    Set<String> ehrIds = cohortExecutor.execute(cohort, false);
-    if (ehrIds.size() < privacyProperties.getMinHits()) {
-      log.warn(RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
-      throw new PrivacyException(CohortService.class, RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
-    }
-
-    return determineTemplatesHits(ehrIds, requestDto.getTemplateIds());
-  }
-
-  private Map<String, Integer> determineTemplatesHits(
-      Set<String> ehrIds, List<String> templateIds) {
-    Map<String, Integer> hits = new HashMap<>();
-    templateIds.forEach(templateId -> getTemplateHits(ehrIds, hits, templateId));
-    return hits;
-  }
-
-  private void getTemplateHits(Set<String> ehrIds, Map<String, Integer> hits, String templateId) {
-    try {
-      AqlQuery aql = templateService.createSelectCompositionQuery(templateId);
-
-      List<Policy> policies = new LinkedList<>();
-      policies.add(EhrPolicy.builder().cohortEhrIds(ehrIds).build());
-      policies.add(TemplatesPolicy.builder().templatesMap(Map.of(templateId, templateId)).build());
-      policyService.apply(aql, policies);
-
-      Set<String> templateHits =
-          ehrBaseService.retrieveEligiblePatientIds(AqlRenderer.render(aql));
-      hits.put(templateId, templateHits != null ? templateHits.size() : 0);
-
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-
-      if (StringUtils.isNotEmpty(templateId)) {
-        hits.put(templateId, -1);
-      }
-    }
+    Map<String, Integer> templateMap = requestDto.getTemplateIds().stream().collect(Collectors.toMap(Function.identity(), e -> 0));
+    templateMap.putAll(cohortExecutor.executeNumberOfPatientsPerPath(cohortGroup, false, TEMPLATE_PATH));
+    return templateMap;
   }
 
   public Cohort updateCohort(CohortDto cohortDto, Long cohortId, String userId) {
@@ -229,11 +182,11 @@ public class CohortService {
     }
   }
 
-  private void validateCohortParameters(CohortGroupDto cohortGroupDto) {
-    if (cohortGroupDto.isGroup() && CollectionUtils.isEmpty(cohortGroupDto.getChildren())) {
+  private void validateCohortParameters(CohortGroup cohortGroupDto) {
+    if (cohortGroupDto.getType() == Type.GROUP && CollectionUtils.isEmpty(cohortGroupDto.getChildren())) {
       throw new BadRequestException(CohortService.class, INVALID_COHORT_GROUP_CHILDREN_MISSING);
     }
-    if (cohortGroupDto.isAql()) {
+    if (cohortGroupDto.getType() == Type.AQL) {
       if (Objects.isNull(cohortGroupDto.getQuery())) {
         throw new BadRequestException(CohortGroup.class, INVALID_COHORT_GROUP_AQL_MISSING);
       }
@@ -313,33 +266,31 @@ public class CohortService {
 
   public CohortSizeDto getCohortGroupSizeWithDistribution(CohortGroupDto cohortGroupDto, String userId, Boolean allowUsageOutsideEu) {
     userDetailsService.checkIsUserApproved(userId);
-    Set<String> ehrIds = getCohortGroupEhrIds(cohortGroupDto, allowUsageOutsideEu);
-    int count = ehrIds.size();
+    CohortGroup cohortGroup = convertToCohortGroupEntity(cohortGroupDto);
+
+    long count = getCohortGroupSizeAndCheck(cohortGroup, allowUsageOutsideEu);
     if (count == 0) {
       return CohortSizeDto.builder().build();
     }
 
-    String idsString = "'" + String.join("','", ehrIds) + "'";
-
-    var hospitals = getSizesPerHospital(userId, idsString);
-
-    var ageGroups = getSizesPerAgeGroup(idsString);
-
-    return CohortSizeDto.builder().hospitals(hospitals).ages(ageGroups).count(count).build();
+    var hospitals = getSizesPerHospital(cohortGroup, allowUsageOutsideEu);
+    var ageGroups = getSizesPerAgeGroup(cohortGroup, allowUsageOutsideEu);
+    return CohortSizeDto.builder().hospitals(hospitals).ages(ageGroups).count((int) count).build();
   }
 
-  private Set<String> getCohortGroupEhrIds(CohortGroupDto cohortGroupDto, Boolean allowUsageOutsideEu) {
-    CohortGroup cohortGroup = convertToCohortGroupEntity(cohortGroupDto);
-    validateCohortParameters(cohortGroupDto);
-    Set<String> ehrIds = cohortExecutor.executeGroup(cohortGroup, allowUsageOutsideEu);
-    if (ehrIds.size() < privacyProperties.getMinHits()) {
+  private long getCohortGroupSizeAndCheck(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
+    validateCohortParameters(cohortGroup);
+    long ehrIds = cohortExecutor.executeNumberOfPatients(cohortGroup, allowUsageOutsideEu);
+    if (ehrIds < privacyProperties.getMinHits()) {
       log.warn(RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
       throw new PrivacyException(CohortService.class, RESULTS_WITHHELD_FOR_PRIVACY_REASONS);
     }
     return ehrIds;
   }
 
-  private Map<String, Integer> getSizesPerAgeGroup(String idsString) {
+  private Map<String, Integer> getSizesPerAgeGroup(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
+    Set<String> ehrIds = cohortExecutor.executePatientIds(cohortGroup, allowUsageOutsideEu);
+    String idsString = "'" + String.join("','", ehrIds) + "'";
     Map<String, Integer> sizes = new LinkedHashMap<>();
     for (int age = 0; age < MAX_AGE; age += AGE_INTERVAL) {
       QueryResponseData queryResponseData =
@@ -356,24 +307,7 @@ public class CohortService {
     return sizes;
   }
 
-  private Map<String, Integer> getSizesPerHospital(String loggedInUserId, String idsString) {
-
-    Map<String, Integer> sizes = new LinkedHashMap<>();
-    List<String> clinics = contentService.getClinics(loggedInUserId);
-    if (CollectionUtils.isNotEmpty(clinics)) {
-      for (String clinic : clinics) {
-        if (Objects.nonNull(clinic)) {
-          QueryResponseData queryResponseData =
-              ehrBaseService.executePlainQuery(String.format(GET_PATIENTS_PER_CLINIC, clinic, idsString));
-          List<List<Object>> rows = queryResponseData.getRows();
-          if (rows == null) {
-            sizes.put(clinic, 0);
-          } else {
-            sizes.put(clinic, rows.size());
-          }
-        }
-      }
-    }
-    return sizes;
+  private Map<String, Integer> getSizesPerHospital(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
+    return cohortExecutor.executeNumberOfPatientsPerPath(cohortGroup, allowUsageOutsideEu, HOSPITAL_PATH);
   }
 }

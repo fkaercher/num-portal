@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
 import org.ehrbase.openehr.sdk.aql.dto.containment.ContainmentClassExpression;
+import org.ehrbase.openehr.sdk.aql.dto.containment.ContainmentSetOperator;
+import org.ehrbase.openehr.sdk.aql.dto.containment.ContainmentSetOperatorSymbol;
 import org.ehrbase.openehr.sdk.aql.dto.operand.CountDistinctAggregateFunction;
 import org.ehrbase.openehr.sdk.aql.dto.operand.IdentifiedPath;
 import org.ehrbase.openehr.sdk.aql.dto.path.AqlObjectPath;
@@ -22,6 +24,7 @@ import org.ehrbase.openehr.sdk.generator.commons.aql.query.NativeQuery;
 import org.ehrbase.openehr.sdk.generator.commons.aql.query.Query;
 import org.ehrbase.openehr.sdk.generator.commons.aql.record.Record;
 import org.ehrbase.openehr.sdk.generator.commons.aql.record.Record1;
+import org.ehrbase.openehr.sdk.generator.commons.aql.record.Record2;
 import org.ehrbase.openehr.sdk.response.dto.QueryResponseData;
 import org.ehrbase.openehr.sdk.response.dto.TemplatesResponseData;
 import org.ehrbase.openehr.sdk.response.dto.ehrscape.TemplateMetaDataDto;
@@ -152,6 +155,67 @@ public class EhrBaseService {
     try {
       List<Record1<Integer>> results = restClient.aqlEndpoint().execute(Query.buildNativeQuery(AqlRenderer.render(dto), Integer.class));
       return results.get(0).value1();
+    } catch (WrongStatusCodeException e) {
+      log.error(INVALID_AQL_QUERY, e.getMessage(), e);
+      throw new WrongStatusCodeException("EhrBaseService.class", 93, 1);
+    } catch (ClientException e) {
+      log.error(ERROR_MESSAGE, e.getMessage(), e);
+      throw new SystemException(EhrBaseService.class, AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL,
+              String.format(AN_ERROR_HAS_OCCURRED_CANNOT_EXECUTE_AQL, e.getMessage()));
+    }
+  }
+
+  public Map<String, Integer> retrieveNumberOfPatientsPerPath(String query, String path) {
+    log.debug("EhrBase retrieve number of patients per path for query: {} ", query);
+    AqlQuery dto = AqlQueryParser.parse(query);
+
+    var c = "c";
+    SelectExpression selectPatients = new SelectExpression();
+    var count = new CountDistinctAggregateFunction();
+
+    IdentifiedPath ehrIdPath = new IdentifiedPath();
+    ehrIdPath.setPath(AqlObjectPath.parse(AqlQueryConstants.EHR_ID_PATH));
+
+    ContainmentClassExpression containmentClassExpression = new ContainmentClassExpression();
+    containmentClassExpression.setType(AqlQueryConstants.EHR_TYPE);
+    containmentClassExpression.setIdentifier(AqlQueryConstants.EHR_CONTAINMENT_IDENTIFIER);
+    ehrIdPath.setRoot(containmentClassExpression);
+
+    count.setIdentifiedPath(ehrIdPath);
+    selectPatients.setColumnExpression(count);
+
+    SelectExpression selectPath = new SelectExpression();
+    IdentifiedPath identifiedPath = new IdentifiedPath();
+    identifiedPath.setPath(AqlObjectPath.parse(path));
+
+    ContainmentClassExpression containmentClassExpression1 = new ContainmentClassExpression();
+    containmentClassExpression1.setIdentifier(c);
+    identifiedPath.setRoot(containmentClassExpression1);
+    selectPath.setColumnExpression(identifiedPath);
+
+    dto.getSelect().setStatement(List.of(selectPath, selectPatients));
+
+    var from = dto.getFrom();
+    if (from instanceof ContainmentClassExpression containment) {
+      // FROM EHR e CONTAINS COMPOSITION c
+      var contains = containment.getContains();
+
+      var composition = new ContainmentClassExpression();
+      composition.setType(AqlQueryConstants.COMPOSITION_TYPE);
+      composition.setIdentifier(c);
+
+      var and = new ContainmentSetOperator();
+      and.setSymbol(ContainmentSetOperatorSymbol.AND);
+      and.setValues(List.of(contains, composition));
+      containment.setContains(and);
+    }
+
+    log.info("Generated query for retrieveNumberOfPatientsPerPath {} ", AqlRenderer.render(dto));
+
+    try {
+      List<Record2<String, Integer>> results = restClient.aqlEndpoint().execute(
+          Query.buildNativeQuery(AqlRenderer.render(dto), String.class, Integer.class));
+      return results.stream().collect(Collectors.toMap(Record2::value1, Record2::value2));
     } catch (WrongStatusCodeException e) {
       log.error(INVALID_AQL_QUERY, e.getMessage(), e);
       throw new WrongStatusCodeException("EhrBaseService.class", 93, 1);
