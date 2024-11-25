@@ -1,14 +1,12 @@
 package org.highmed.numportal.service.executors;
 
 import org.highmed.numportal.properties.ConsentProperties;
-import org.highmed.numportal.service.ehrbase.EhrBaseService;
 import org.highmed.numportal.service.policy.EuropeanConsentPolicy;
 import org.highmed.numportal.service.policy.ProjectPolicyService;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
@@ -21,20 +19,17 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Slf4j
 @Service
 @AllArgsConstructor
 public class AqlExecutor {
 
-  private final EhrBaseService ehrBaseService;
-
   private final ProjectPolicyService projectPolicyService;
 
   private final ConsentProperties consentProperties;
 
-  public Set<String> execute(AqlWithParams aqlWithParams, Boolean allowUsageOutsideEu) {
+  public String prepareQuery(AqlWithParams aqlWithParams, Boolean allowUsageOutsideEu) {
 
     if (aqlWithParams != null && aqlWithParams.aqlQuery != null) {
       if (BooleanUtils.isTrue(allowUsageOutsideEu) || allowUsageOutsideEu == null) {
@@ -45,9 +40,9 @@ public class AqlExecutor {
       query = removeNullParameters(aqlWithParams.parameters, query);
       query = addParameters(aqlWithParams.parameters, query);
 
-      return ehrBaseService.retrieveEligiblePatientIds(query);
+      return query;
     } else {
-      return SetUtils.emptySet();
+      return null;
     }
   }
 

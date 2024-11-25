@@ -2,6 +2,7 @@ package org.highmed.numportal.service.executors;
 
 import org.highmed.numportal.domain.model.Cohort;
 import org.highmed.numportal.domain.model.CohortGroup;
+import org.highmed.numportal.service.ehrbase.EhrBaseService;
 import org.highmed.numportal.service.exception.IllegalArgumentException;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +22,8 @@ public class CohortExecutor {
 
   private final AqlExecutor aqlExecutor;
 
+  private final EhrBaseService ehrBaseService;
+
   public Set<String> execute(Cohort cohort, Boolean allowUsageOutsideEu) {
 
     if (cohort == null || cohort.getCohortGroup() == null) {
@@ -32,6 +35,10 @@ public class CohortExecutor {
 
   public Set<String> executeGroup(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
     var aqlWithParams = aqlCombiner.combineQuery(cohortGroup);
-    return aqlExecutor.execute(aqlWithParams, allowUsageOutsideEu);
+    var query = aqlExecutor.prepareQuery(aqlWithParams, allowUsageOutsideEu);
+    if (query == null) {
+      return Set.of();
+    }
+    return ehrBaseService.retrieveEligiblePatientIds(query);
   }
 }

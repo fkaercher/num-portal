@@ -5,6 +5,7 @@ import org.highmed.numportal.domain.model.CohortAql;
 import org.highmed.numportal.domain.model.CohortGroup;
 import org.highmed.numportal.domain.model.Operator;
 import org.highmed.numportal.domain.model.Type;
+import org.highmed.numportal.service.ehrbase.EhrBaseService;
 import org.highmed.numportal.service.exception.IllegalArgumentException;
 
 import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
@@ -35,6 +36,8 @@ public class CohortExecutorTest {
   private AqlCombiner aqlCombiner;
   @Mock
   private AqlExecutor aqlExecutor;
+  @Mock
+  private EhrBaseService ehrBaseService;
   @InjectMocks
   private CohortExecutor cohortExecutor;
 
@@ -44,8 +47,12 @@ public class CohortExecutorTest {
     CohortAql cohortAql1 = CohortAql.builder().id(1L).name(AQL_NAME).query(AQL_QUERY).build();
     CohortAql cohortAql2 = CohortAql.builder().id(2L).name(AQL_NAME).query(AQL_QUERY).build();
 
+    String combinedQuery = "SELECT ...";
+
     AqlWithParams aql = new AqlWithParams(QUERY, Map.of("p1", 1));
-    when(aqlExecutor.execute(aql, false))
+    when(aqlExecutor.prepareQuery(aql, false))
+            .thenReturn(combinedQuery);
+    when(ehrBaseService.retrieveEligiblePatientIds(combinedQuery))
             .thenReturn(Set.of("1", "2", "5", "10"));
 
     CohortGroup first =
@@ -76,8 +83,12 @@ public class CohortExecutorTest {
     CohortAql cohortAql1 = CohortAql.builder().id(1L).name(AQL_NAME).query(AQL_QUERY).build();
     CohortAql cohortAql2 = CohortAql.builder().id(2L).name(AQL_NAME).query(AQL_QUERY).build();
 
+    String combinedQuery = "SELECT ...";
+
     AqlWithParams aql = new AqlWithParams(QUERY, Map.of("p1", 1));
-    when(aqlExecutor.execute(aql, false))
+    when(aqlExecutor.prepareQuery(aql, false))
+            .thenReturn(combinedQuery);
+    when(ehrBaseService.retrieveEligiblePatientIds(combinedQuery))
             .thenReturn(Set.of("1", "2", "5", "10"));
 
     CohortGroup first =
