@@ -53,9 +53,6 @@ import static org.highmed.numportal.domain.templates.ExceptionsTemplate.QUERY_RE
 @Service
 public class EhrBaseService {
 
-  private static final Aql ALL_PATIENTS_IDS =
-      Aql.builder().query("SELECT e/ehr_id/value FROM EHR e").build();
-
   private static final String COMPOSITION_KEY = "_type";
   private static final String NAME = "name";
   private static final String PATH = "path";
@@ -231,10 +228,6 @@ public class EhrBaseService {
     existingExpressions.add(0, selectExpression);
 
     aqlDto.getSelect().setStatement(existingExpressions);
-  }
-
-  public Set<String> getAllPatientIds() {
-    return retrieveEligiblePatientIds(ALL_PATIENTS_IDS);
   }
 
   public List<TemplateMetaDataDto> getAllTemplatesMetadata() {

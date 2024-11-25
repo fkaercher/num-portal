@@ -1,5 +1,12 @@
 package org.highmed.numportal.service;
 
+import org.highmed.numportal.domain.model.Aql;
+import org.highmed.numportal.properties.EhrBaseProperties;
+import org.highmed.numportal.service.ehrbase.CompositionResponseDataBuilder;
+import org.highmed.numportal.service.ehrbase.EhrBaseService;
+import org.highmed.numportal.service.ehrbase.Pseudonymity;
+import org.highmed.numportal.service.exception.SystemException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ehrbase.openehr.sdk.aql.parser.AqlParseException;
 import org.ehrbase.openehr.sdk.aql.parser.AqlQueryParser;
@@ -12,7 +19,6 @@ import org.ehrbase.openehr.sdk.response.dto.TemplatesResponseData;
 import org.ehrbase.openehr.sdk.response.dto.ehrscape.TemplateMetaDataDto;
 import org.ehrbase.openehr.sdk.util.exception.ClientException;
 import org.ehrbase.openehr.sdk.util.exception.WrongStatusCodeException;
-import org.highmed.numportal.properties.EhrBaseProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,11 +27,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.highmed.numportal.domain.model.Aql;
-import org.highmed.numportal.service.ehrbase.CompositionResponseDataBuilder;
-import org.highmed.numportal.service.ehrbase.EhrBaseService;
-import org.highmed.numportal.service.ehrbase.Pseudonymity;
-import org.highmed.numportal.service.exception.SystemException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,8 +36,12 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EhrBaseServiceTest {
@@ -151,12 +156,6 @@ public class EhrBaseServiceTest {
     when(restClient.aqlEndpoint().executeRaw(Query.buildNativeQuery(any())))
             .thenThrow(ClientException.class);
     ehr.executeRawQuery(AqlQueryParser.parse(GOOD_QUERY), 1L);
-  }
-  @Test(expected = SystemException.class)
-  public void shouldHandleClientExceptionWhenConnectToEhrBase() {
-    when(restClient.aqlEndpoint().execute(any(Query.class)))
-            .thenThrow(ClientException.class);
-    ehr.getAllPatientIds();
   }
 
   @Test(expected = WrongStatusCodeException.class)

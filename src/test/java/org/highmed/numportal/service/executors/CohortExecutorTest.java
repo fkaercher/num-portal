@@ -1,18 +1,18 @@
 package org.highmed.numportal.service.executors;
 
-import org.highmed.numportal.domain.model.*;
-import org.highmed.numportal.service.executors.AqlExecutor;
-import org.highmed.numportal.service.executors.CohortExecutor;
-import org.highmed.numportal.service.executors.SetOperationsService;
-import org.junit.Before;
+import org.highmed.numportal.domain.model.Cohort;
+import org.highmed.numportal.domain.model.CohortAql;
+import org.highmed.numportal.domain.model.CohortGroup;
+import org.highmed.numportal.domain.model.Operator;
+import org.highmed.numportal.domain.model.Type;
+import org.highmed.numportal.service.exception.IllegalArgumentException;
+
+import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.highmed.numportal.service.ehrbase.EhrBaseService;
-import org.highmed.numportal.service.exception.IllegalArgumentException;
 
 import java.util.List;
 import java.util.Map;
@@ -27,22 +27,16 @@ import static org.mockito.Mockito.when;
 public class CohortExecutorTest {
 
   private final String COHORT_NAME = "Cohort name";
+  private final AqlQuery QUERY = new AqlQuery();
   private final String AQL_NAME = "AQL query name";
   private final String AQL_QUERY = "SELECT A ... FROM E ... WHERE ...";
-  @Spy
-  private SetOperationsService setOperations;
+
   @Mock
-  private EhrBaseService ehrBaseService;
+  private AqlCombiner aqlCombiner;
   @Mock
   private AqlExecutor aqlExecutor;
   @InjectMocks
   private CohortExecutor cohortExecutor;
-
-  @Before
-  public void setup() {
-    when(ehrBaseService.getAllPatientIds())
-        .thenReturn(Set.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
-  }
 
   @Test
   public void shouldCorrectlyExecuteAndCohort() {
@@ -50,10 +44,9 @@ public class CohortExecutorTest {
     CohortAql cohortAql1 = CohortAql.builder().id(1L).name(AQL_NAME).query(AQL_QUERY).build();
     CohortAql cohortAql2 = CohortAql.builder().id(2L).name(AQL_NAME).query(AQL_QUERY).build();
 
-    when(aqlExecutor.execute(cohortAql1, Map.of("p1", 1), false))
-        .thenReturn(Set.of("1", "2", "5", "10"));
-    when(aqlExecutor.execute(cohortAql2, Map.of("p1", 1), false))
-        .thenReturn(Set.of("1", "2", "4", "5", "6", "10"));
+    AqlWithParams aql = new AqlWithParams(QUERY, Map.of("p1", 1));
+    when(aqlExecutor.execute(aql, false))
+            .thenReturn(Set.of("1", "2", "5", "10"));
 
     CohortGroup first =
         CohortGroup.builder().type(Type.AQL).query(cohortAql1).parameters(Map.of("p1", 1)).build();
@@ -69,10 +62,13 @@ public class CohortExecutorTest {
 
     Cohort cohort = Cohort.builder().name(COHORT_NAME).cohortGroup(andCohort).build();
 
+    when(aqlCombiner.combineQuery(andCohort)).thenReturn(aql);
+
     Set<String> result = cohortExecutor.execute(cohort, false);
 
     assertThat(result, notNullValue());
-    assertThat(result.equals(Set.of("1", "2", "5", "10")), is(true));
+    System.out.println(result);
+    assertThat(result, is(Set.of("1", "2", "5", "10")));
   }
 
   @Test
@@ -80,10 +76,9 @@ public class CohortExecutorTest {
     CohortAql cohortAql1 = CohortAql.builder().id(1L).name(AQL_NAME).query(AQL_QUERY).build();
     CohortAql cohortAql2 = CohortAql.builder().id(2L).name(AQL_NAME).query(AQL_QUERY).build();
 
-    when(aqlExecutor.execute(cohortAql1, Map.of("p1", 1), false))
-        .thenReturn(Set.of("1", "2", "5", "10"));
-    when(aqlExecutor.execute(cohortAql2, Map.of("p1", 1), false))
-        .thenReturn(Set.of("4", "5", "6", "7", "8", "9", "10"));
+    AqlWithParams aql = new AqlWithParams(QUERY, Map.of("p1", 1));
+    when(aqlExecutor.execute(aql, false))
+            .thenReturn(Set.of("1", "2", "5", "10"));
 
     CohortGroup first =
         CohortGroup.builder().type(Type.AQL).query(cohortAql1).parameters(Map.of("p1", 1)).build();
@@ -99,10 +94,12 @@ public class CohortExecutorTest {
 
     Cohort cohort = Cohort.builder().name(COHORT_NAME).cohortGroup(orCohort).build();
 
+    when(aqlCombiner.combineQuery(orCohort)).thenReturn(aql);
+
     Set<String> result = cohortExecutor.execute(cohort, false);
 
     assertThat(result, notNullValue());
-    assertThat(result.equals(Set.of("1", "2", "4", "5", "6", "7", "8", "9", "10")), is(true));
+    assertThat(result, is(Set.of("1", "2", "5", "10")));
   }
 
   @Test(expected = IllegalArgumentException.class)
