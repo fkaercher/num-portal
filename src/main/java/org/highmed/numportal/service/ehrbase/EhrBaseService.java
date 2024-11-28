@@ -10,11 +10,15 @@ import com.nedap.archie.rm.support.identification.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.ehrbase.openehr.sdk.aql.dto.AqlQuery;
+import org.ehrbase.openehr.sdk.aql.dto.condition.LogicalOperatorCondition;
+import org.ehrbase.openehr.sdk.aql.dto.condition.LogicalOperatorCondition.ConditionLogicalOperatorSymbol;
+import org.ehrbase.openehr.sdk.aql.dto.condition.MatchesCondition;
 import org.ehrbase.openehr.sdk.aql.dto.containment.ContainmentClassExpression;
 import org.ehrbase.openehr.sdk.aql.dto.containment.ContainmentSetOperator;
 import org.ehrbase.openehr.sdk.aql.dto.containment.ContainmentSetOperatorSymbol;
 import org.ehrbase.openehr.sdk.aql.dto.operand.CountDistinctAggregateFunction;
 import org.ehrbase.openehr.sdk.aql.dto.operand.IdentifiedPath;
+import org.ehrbase.openehr.sdk.aql.dto.operand.StringPrimitive;
 import org.ehrbase.openehr.sdk.aql.dto.path.AqlObjectPath;
 import org.ehrbase.openehr.sdk.aql.dto.select.SelectExpression;
 import org.ehrbase.openehr.sdk.aql.parser.AqlQueryParser;
@@ -165,7 +169,7 @@ public class EhrBaseService {
     }
   }
 
-  public Map<String, Integer> retrieveNumberOfPatientsPerPath(String query, String path) {
+  public Map<String, Integer> retrieveNumberOfPatientsPerPath(String query, String path, List<String> values) {
     log.debug("EhrBase retrieve number of patients per path for query: {} ", query);
     AqlQuery dto = AqlQueryParser.parse(query);
 
@@ -194,6 +198,18 @@ public class EhrBaseService {
     selectPath.setColumnExpression(identifiedPath);
 
     dto.getSelect().setStatement(List.of(selectPath, selectPatients));
+
+    if (values != null && !values.isEmpty()) {
+      var m = new MatchesCondition();
+      m.setStatement(identifiedPath);
+      m.setValues(values.stream().map(StringPrimitive::new).collect(Collectors.toList()));
+
+      var and = new LogicalOperatorCondition();
+      and.setSymbol(ConditionLogicalOperatorSymbol.AND);
+      and.setValues(List.of(dto.getWhere(), m));
+
+      dto.setWhere(and);
+    }
 
     var from = dto.getFrom();
     if (from instanceof ContainmentClassExpression containment) {

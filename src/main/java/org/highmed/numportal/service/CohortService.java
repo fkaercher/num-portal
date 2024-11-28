@@ -147,7 +147,7 @@ public class CohortService {
     getCohortGroupSizeAndCheck(cohortGroup, false);
 
     Map<String, Integer> templateMap = requestDto.getTemplateIds().stream().collect(Collectors.toMap(Function.identity(), e -> 0));
-    templateMap.putAll(cohortExecutor.executeNumberOfPatientsPerPath(cohortGroup, false, TEMPLATE_PATH));
+    templateMap.putAll(cohortExecutor.executeNumberOfPatientsPerPath(cohortGroup, false, TEMPLATE_PATH, templateMap.keySet().stream().toList()));
     return templateMap;
   }
 
@@ -308,6 +308,6 @@ public class CohortService {
   }
 
   private Map<String, Integer> getSizesPerHospital(CohortGroup cohortGroup, Boolean allowUsageOutsideEu) {
-    return cohortExecutor.executeNumberOfPatientsPerPath(cohortGroup, allowUsageOutsideEu, HOSPITAL_PATH);
+    return cohortExecutor.executeNumberOfPatientsPerPath(cohortGroup, allowUsageOutsideEu, HOSPITAL_PATH, List.of());
   }
 }

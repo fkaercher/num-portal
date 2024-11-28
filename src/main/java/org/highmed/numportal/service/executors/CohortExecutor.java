@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,12 +53,12 @@ public class CohortExecutor {
     return ehrBaseService.retrieveNumberOfPatients(query);
   }
 
-  public Map<String, Integer> executeNumberOfPatientsPerPath(CohortGroup cohortGroup, Boolean allowUsageOutsideEu, String path) {
+  public Map<String, Integer> executeNumberOfPatientsPerPath(CohortGroup cohortGroup, Boolean allowUsageOutsideEu, String path, List<String> values) {
     var aqlWithParams = aqlCombiner.combineQuery(cohortGroup);
     var query = aqlExecutor.prepareQuery(aqlWithParams, allowUsageOutsideEu);
     if (query == null) {
       return Map.of();
     }
-    return ehrBaseService.retrieveNumberOfPatientsPerPath(query, path);
+    return ehrBaseService.retrieveNumberOfPatientsPerPath(query, path, values);
   }
 }

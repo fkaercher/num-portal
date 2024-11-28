@@ -517,7 +517,7 @@ public class CohortServiceTest {
                 .build();
         when(cohortExecutor.executeNumberOfPatients(any(CohortGroup.class), Mockito.eq(false))).thenReturn(10L);
         cohortService.getSizePerTemplates(approvedUser.getUserId(), requestDto);
-        verify(cohortExecutor, times(1)).executeNumberOfPatientsPerPath(any(), anyBoolean(), eq(CohortService.TEMPLATE_PATH));
+        verify(cohortExecutor, times(1)).executeNumberOfPatientsPerPath(any(), anyBoolean(), eq(CohortService.TEMPLATE_PATH), eq(List.of("Alter")));
     }
 
     @Test
@@ -528,7 +528,7 @@ public class CohortServiceTest {
         Map<String, Integer> responseData1 = (Map.of(
                 "clinic one", 10
         ));
-        when(cohortExecutor.executeNumberOfPatientsPerPath(any(CohortGroup.class), eq(false), eq(CohortService.HOSPITAL_PATH))).thenReturn(responseData1);
+        when(cohortExecutor.executeNumberOfPatientsPerPath(any(CohortGroup.class), eq(false), eq(CohortService.HOSPITAL_PATH), eq(List.of()))).thenReturn(responseData1);
         QueryResponseData responseData2 = new QueryResponseData();
         responseData2.setRows( List.of(new ArrayList<>(List.of(10))));
         for (int age = 0; age < 122; age += 10) {
